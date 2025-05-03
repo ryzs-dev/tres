@@ -79,9 +79,8 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
       paymentIntent.status === "requires_capture" &&
       paymentIntent.amount_capturable > 0
     ) {
-      const capturedPaymentIntent = await this.client.paymentIntents.capture(
-        externalId
-      );
+      const capturedPaymentIntent =
+        await this.client.paymentIntents.capture(externalId);
       console.log("Payment captured:", capturedPaymentIntent);
       return { data: JSON.parse(JSON.stringify(capturedPaymentIntent)) };
     } else {
@@ -99,9 +98,8 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
 
       if (externalId) {
         // If we already have a payment intent, retrieve it
-        const paymentIntent = await this.client.paymentIntents.retrieve(
-          externalId
-        );
+        const paymentIntent =
+          await this.client.paymentIntents.retrieve(externalId);
 
         // Check the status of the payment intent
         if (
@@ -184,7 +182,6 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
     const paymentIntent = await this.client.paymentIntents.create({
       amount: amount,
       currency: currency,
-      payment_method_types: ["card", "fpx", "grabpay"], // Manually specify methods
       confirm: false,
     });
 
@@ -358,9 +355,8 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
 
     try {
       // Call Stripe API to retrieve the payment intent
-      const paymentIntent = await this.client.paymentIntents.retrieve(
-        externalId
-      );
+      const paymentIntent =
+        await this.client.paymentIntents.retrieve(externalId);
 
       return {
         data: { ...paymentIntent },
