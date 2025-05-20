@@ -225,29 +225,38 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
     }
   }
 
-  //   Delete Payment
   async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
-    // Extract the payment intent ID from the payment data
     const externalId = input.data?.id as string;
+
     try {
       if (!externalId) {
-        // If there's no payment intent ID, there's nothing to delete
+        // No payment intent to delete
         return {};
       }
 
-      // Cancel the payment intent in Stripe
-      // Note: In Stripe, you can't actually delete a payment intent, but you can cancel it
+      // Try canceling the payment intent
       await this.client.paymentIntents.cancel(externalId);
 
-      // Return an empty object as required by the DeletePaymentOutput type
       return {};
-    } catch (error) {
-      // Log the error but don't throw if it's because the payment intent was already canceled
+    } catch (error: any) {
+      // Handle specific Stripe error for already canceled payment intent
       if (error.code === "payment_intent_canceled") {
         this.logger_.warn(`Payment intent ${externalId} was already canceled`);
         return {};
       }
 
+      // Handle Stripe resource missing error (e.g. payment intent doesn't exist)
+      if (
+        error.type === "StripeInvalidRequestError" &&
+        error.code === "resource_missing"
+      ) {
+        this.logger_.warn(
+          `Payment intent ${externalId} does not exist or was already deleted.`
+        );
+        return {};
+      }
+
+      // Other unexpected errors
       this.logger_.error(`Error deleting payment: ${error.message}`);
       throw new MedusaError(
         MedusaError.Types.UNEXPECTED_STATE,
