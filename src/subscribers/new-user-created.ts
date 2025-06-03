@@ -1,7 +1,7 @@
 import { linkCustomerGroupsToCustomerWorkflow } from "@medusajs/medusa/core-flows";
 
 // Replace with your actual group ID from the Admin UI
-const NEW_BUYER_GROUP_ID = "cusgroup_01JWQ5RN74XM9N0KHNPQT5JMRS";
+const NEW_BUYER_GROUP_ID = "cusgroup_01JWSYP8ZXDGW38JW2NSJE4JS8";
 
 export default async function handleCustomerCreated({ event, container }) {
   const customerId = event.data.id;

@@ -2,7 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import { linkCustomerGroupsToCustomerWorkflow } from "@medusajs/medusa/core-flows";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
-const NEW_BUYER_GROUP_ID = "cusgroup_01JWQ5RN74XM9N0KHNPQT5JMRS";
+const NEW_BUYER_GROUP_ID = "cusgroup_01JWSYP8ZXDGW38JW2NSJE4JS8";
 
 export default async function handleOrderPlaced({
   event: { data },
