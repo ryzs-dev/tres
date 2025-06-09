@@ -13,7 +13,6 @@
     "medusa"
   ],
   "scripts": {
-    "predeploy": "medusa db:migrate",
     "build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "medusa start",
