@@ -1,6 +1,5 @@
 import {
   createWorkflow,
-  transform,
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk";
 import {
@@ -28,9 +27,21 @@ export const addBundleToCartWorkflow = createWorkflow(
     // @ts-ignore
     const { data } = useQueryGraphStep({
       entity: "bundle",
-      fields: ["id", "items.*", "items.product.*", "items.product.variants.*"],
+      fields: [
+        "id",
+        "title",
+        "bundle_type",
+        "items_to_pick",
+        "pricing_type",
+        "fixed_price",
+        "discount_percentage",
+        "items.*",
+        "items.product.*",
+        "items.product.variants.*",
+      ],
       filters: {
         id: bundle_id,
+        is_active: true,
       },
       options: {
         throwIfKeyNotFound: true,
