@@ -34,7 +34,8 @@
     "awilix": "^8.0.1",
     "pg": "^8.13.0",
     "resend": "4.2.0",
-    "stripe": "^17.7.0"
+    "stripe": "^17.7.0",
+    "typeor": "^1.2.0"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.6.1",

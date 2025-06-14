@@ -47,7 +47,6 @@ module.exports = defineConfig({
         ],
       },
     },
-
     {
       resolve: "@medusajs/medusa/file",
       options: {
@@ -70,6 +69,9 @@ module.exports = defineConfig({
           },
         ],
       },
+    },
+    {
+      resolve: "./src/modules/bundled-product",
     },
   ],
 });
