@@ -20,8 +20,6 @@ export const createBundleStep = createStep(
 
     const bundle = await bundledProductModuleService.createBundles({
       title: input.title,
-      handle: input.handle,
-      description: input.description || null,
       is_active: input.is_active ?? true,
       min_items: input.min_items ?? 1,
       max_items: input.max_items || null,
