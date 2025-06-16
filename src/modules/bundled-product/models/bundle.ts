@@ -18,6 +18,6 @@ export const Bundle = model.define("bundle", {
   is_active: model.boolean().default(true), // To enable/disable bundles
 
   // Promotional pricing rules (if you want to make them configurable)
-  discount_2_items: model.number().default(10).nullable(), // 10% for 2 items
-  discount_3_items: model.number().default(15).nullable(), // 15% for 3 items
+  discount_2_items: model.number().nullable(), // 10% for 2 items
+  discount_3_items: model.number().nullable(), // 15% for 3 items
 });

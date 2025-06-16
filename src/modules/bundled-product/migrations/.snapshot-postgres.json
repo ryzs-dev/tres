@@ -79,7 +79,6 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "default": "10",
           "mappedType": "integer"
         },
         "discount_3_items": {
@@ -89,7 +88,6 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "default": "15",
           "mappedType": "integer"
         },
         "created_at": {

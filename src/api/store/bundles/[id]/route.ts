@@ -1,112 +1,83 @@
-// src/api/store/bundles/[id]/route.ts
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
-import { QueryContext } from "@medusajs/framework/utils";
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const { id } = req.params;
-  const query = req.scope.resolve("query");
-  const { currency_code, region_id } = req.query;
-
-  // Default currency if not provided
-  const defaultCurrency = currency_code || "USD";
-
-  console.log("=== BUNDLE BY ID (WITH PRICING) ===");
-  console.log("Bundle ID:", id);
-  console.log("Currency:", defaultCurrency, "Region:", region_id);
-
   try {
-    // Query bundle with items and linked products INCLUDING pricing
-    const { data } = await query.graph({
+    const { id } = req.params;
+    const { currency_code, region_id } = req.query;
+    const query = req.scope.resolve("query");
+
+    console.log("=== BUNDLE BY ID (WITH PRICING) ===");
+    console.log(`Bundle ID: ${id}`);
+    console.log(`Currency: ${currency_code} Region: ${region_id}`);
+
+    const { data: bundles } = await query.graph({
       entity: "bundle",
       fields: [
-        "id",
-        "title",
-        "handle",
-        "description",
-        "is_active",
-        "min_items",
-        "max_items",
-        "selection_type",
-        "created_at",
-        "updated_at",
+        "*", // All bundle fields including discount_2_items and discount_3_items
         "items.*",
-        "items.product.id",
+        "items.product.*",
         "items.product.title",
         "items.product.handle",
         "items.product.description",
         "items.product.thumbnail",
         "items.product.status",
-        "items.product.variants.id",
+        "items.product.variants.*",
         "items.product.variants.title",
-        "items.product.variants.calculated_price.*", // Include pricing
-        "items.product.variants.inventory_quantity",
-        "items.product.variants.manage_inventory",
-        "items.product.variants.allow_backorder",
+        "items.product.variants.prices.*", // Include pricing
+        "items.quantity",
+        "items.is_optional",
+        "items.sort_order",
       ],
       filters: {
-        id: id,
+        id,
         is_active: true,
-      },
-      // Add pricing context
-      context: {
-        items: {
-          product: {
-            variants: {
-              calculated_price: QueryContext({
-                region_id,
-                currency_code: defaultCurrency,
-              }),
-            },
-          },
-        },
       },
     });
 
-    console.log(`Found ${data.length} bundles`);
-
-    if (!data || data.length === 0) {
+    if (!bundles?.length) {
       return res.status(404).json({
-        error: "Bundle not found",
-        id: id,
+        error: "Bundle not found or inactive",
+        message: `Bundle with ID ${id} was not found or is not active`,
       });
     }
 
-    const bundle = data[0];
+    const bundle = bundles[0];
+
     console.log(
-      "Found bundle:",
-      bundle.title,
-      "with",
-      bundle.items?.length,
-      "items"
+      `Found bundle: ${bundle.title} with ${bundle.items?.length || 0} items`
     );
 
-    // Sort items by sort_order
-    if (bundle.items) {
-      bundle.items.sort((a, b) => (a?.sort_order || 0) - (b?.sort_order || 0));
-
-      // Log pricing info for debugging
-      bundle.items.forEach((item) => {
-        if (item) {
-          console.log(`Item: ${item.product?.title}`);
-          item.product?.variants?.forEach((variant) => {
+    // Log pricing information for debugging
+    // Replace the logging section with this safer version:
+    bundle.items.forEach((item) => {
+      if (item) {
+        console.log(`Item: ${item.product?.title || "No product associated"}`);
+        if (item.product?.variants) {
+          item.product.variants.forEach((variant) => {
             console.log(
-              `  Variant: ${variant.title}, Price: ${variant.calculated_price?.calculated_amount}`
+              `  Variant: ${variant.title}, Price: ${variant.calculated_price?.calculated_amount || "No price"}`
             );
           });
         }
+      }
+    });
+
+    res.json({
+      bundle,
+    });
+  } catch (error) {
+    console.error("Error fetching bundle by ID:", error);
+
+    if (error instanceof Error && error.message.includes("not found")) {
+      return res.status(404).json({
+        error: "Bundle not found",
+        details: error.message,
       });
     }
 
-    res.json({
-      flexible_bundle: bundle,
-      success: true,
-      method: "with_pricing",
-    });
-  } catch (error) {
-    console.error("Error fetching bundle:", error);
     res.status(500).json({
       error: "Failed to fetch bundle",
-      message: error.message,
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }

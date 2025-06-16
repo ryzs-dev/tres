@@ -69,20 +69,58 @@ export async function GET(
   try {
     const query = req.scope.resolve("query");
 
-    const { data: flexibleBundles, metadata: { count, take, skip } = {} } =
-      await query.graph({
-        entity: "bundle",
-        ...req.queryConfig,
-      });
+    console.log("🔍 GET /admin/bundled-products called");
+    console.log("📋 Query params:", req.query);
 
-    res.json({
-      flexible_bundles: flexibleBundles,
-      count: count || 0,
-      limit: take || 15,
-      offset: skip || 0,
+    // FIXED: More explicit query with all needed fields
+    const { data: bundles, metadata } = await query.graph({
+      entity: "bundle",
+      fields: [
+        "id",
+        "title",
+        "handle",
+        "description",
+        "is_active",
+        "min_items",
+        "max_items",
+        "selection_type",
+        "discount_2_items", // Make sure these are included
+        "discount_3_items", // Make sure these are included
+        "created_at",
+        "updated_at",
+        "items.*",
+        "items.product.*",
+        "items.product.title",
+        "items.quantity",
+        "items.is_optional",
+        "items.sort_order",
+      ],
+      filters: {
+        // Optionally filter by active status or remove to show all
+        // is_active: true,
+      },
+      pagination: {
+        take: parseInt(req.query.limit as string) || 15,
+        skip: parseInt(req.query.offset as string) || 0,
+      },
     });
+
+    console.log(`📊 Found ${bundles?.length || 0} bundles`);
+    console.log("🎯 Sample bundle:", bundles?.[0]);
+
+    // FIXED: Make sure response format matches what frontend expects
+    const response = {
+      flexible_bundles: bundles || [], // Use "flexible_bundles" key to match frontend
+      count: metadata?.count || bundles?.length || 0,
+      limit: parseInt(req.query.limit as string) || 15,
+      offset: parseInt(req.query.offset as string) || 0,
+    };
+
+    console.log("📤 Sending response:", response);
+
+    res.json(response);
   } catch (error) {
-    console.error("Error fetching flexible bundles:", error);
+    console.error("🚨 Error fetching flexible bundles:", error);
     res.status(500).json({
       error: "Failed to fetch flexible bundles",
       details: error instanceof Error ? error.message : "Unknown error",

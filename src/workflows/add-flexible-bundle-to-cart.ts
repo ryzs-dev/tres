@@ -1,3 +1,4 @@
+// src/workflows/add-flexible-bundle-to-cart.ts - FIXED VERSION
 import {
   createWorkflow,
   WorkflowResponse,
@@ -17,7 +18,7 @@ type AddFlexibleBundleToCartWorkflowInput = {
   selectedItems: {
     item_id: string;
     variant_id: string;
-    quantity?: number; // Optional custom quantity per item
+    quantity?: number;
   }[];
 };
 
@@ -28,7 +29,20 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
     bundle_id,
     selectedItems,
   }: AddFlexibleBundleToCartWorkflowInput) => {
-    // Fetch bundle with items, products, and pricing information
+    // FIXED: Get cart first with unique step name
+    // @ts-ignore
+    const { data: cartData } = useQueryGraphStep({
+      entity: "cart",
+      fields: ["id", "region_id", "currency_code", "region.*"],
+      filters: {
+        id: cart_id,
+      },
+      options: {
+        throwIfKeyNotFound: true,
+      },
+    }).config({ name: "get-cart-for-bundle" }); // FIXED: Unique name
+
+    // FIXED: Get bundle with unique step name
     // @ts-ignore
     const { data: bundles } = useQueryGraphStep({
       entity: "bundle",
@@ -42,23 +56,23 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
         "items.*",
         "items.product.*",
         "items.product.variants.*",
-        "items.product.variants.calculated_price.*", // Include calculated pricing
-        "items.product.variants.prices.*", // Include price variants
       ],
       filters: {
         id: bundle_id,
-        is_active: true, // Only allow active bundles
+        is_active: true,
       },
       options: {
         throwIfKeyNotFound: true,
       },
-    });
+    }).config({ name: "get-bundle-for-cart" }); // FIXED: Unique name
 
-    // Prepare cart data for selected items with bundle discount logic
+    // Prepare cart data with currency context
+    //@ts-ignore
     const itemsToAdd = prepareFlexibleBundleCartDataStep({
       bundle: bundles[0],
+      cart: cartData[0],
       selectedItems,
-    } as unknown as PrepareFlexibleBundleCartDataStepInput);
+    } as PrepareFlexibleBundleCartDataStepInput);
 
     // Add selected items to cart with bundle pricing
     addToCartWorkflow.runAsStep({
@@ -68,7 +82,7 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
       },
     });
 
-    // Fetch updated cart with comprehensive item information
+    // FIXED: Fetch updated cart with unique step name
     // @ts-ignore
     const { data: updatedCarts } = useQueryGraphStep({
       entity: "cart",
@@ -84,7 +98,7 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
         "tax_total",
         "shipping_total",
       ],
-    }).config({ name: "refetch-cart" });
+    }).config({ name: "refetch-updated-cart" }); // FIXED: Unique name
 
     return new WorkflowResponse(updatedCarts[0]);
   }

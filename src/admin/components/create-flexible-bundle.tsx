@@ -139,7 +139,10 @@ export const CreateFlexibleBundle = () => {
       setOpen(false);
       toast.success("Flexible bundle created successfully");
       queryClient.invalidateQueries({
-        queryKey: ["flexible-bundles"],
+        queryKey: ["flexible-bundles"], // Match the listing page query key
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["bundled-products"],
       });
 
       // Reset form

@@ -1,3 +1,5 @@
+// src/workflows/create-flexible-bundle.ts
+import { CreateProductWorkflowInputDTO } from "@medusajs/framework/types";
 import {
   createWorkflow,
   transform,
@@ -6,6 +8,7 @@ import {
 import { createBundleStep } from "./steps/create-bundle";
 import { createBundleItemsStep } from "./steps/create-bundle-items";
 import {
+  createProductsWorkflow,
   createRemoteLinkStep,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows";
@@ -15,12 +18,14 @@ import { Modules } from "@medusajs/framework/utils";
 export type CreateFlexibleBundleWorkflowInput = {
   bundle: {
     title: string;
-    handle: string;
+    handle?: string;
     description?: string;
     is_active?: boolean;
     min_items?: number;
     max_items?: number;
     selection_type?: "flexible" | "required_all";
+    discount_2_items?: number; // ADDED
+    discount_3_items?: number; // ADDED
     items: {
       product_id: string;
       quantity: number;
@@ -33,46 +38,50 @@ export type CreateFlexibleBundleWorkflowInput = {
 export const createFlexibleBundleWorkflow = createWorkflow(
   "create-flexible-bundle",
   ({ bundle: bundleData }: CreateFlexibleBundleWorkflowInput) => {
-    // Create the bundle (container only, not a product)
+    // Create the bundle with all fields including discounts
     const bundle = createBundleStep({
       title: bundleData.title,
-      handle: bundleData.handle,
+      handle: bundleData.handle ?? "",
       description: bundleData.description,
-      is_active: bundleData.is_active,
-      min_items: bundleData.min_items,
+      is_active: bundleData.is_active ?? true,
+      min_items: bundleData.min_items ?? 1,
       max_items: bundleData.max_items,
-      selection_type: bundleData.selection_type,
+      selection_type: bundleData.selection_type ?? "flexible",
+      discount_2_items: bundleData.discount_2_items, // ADDED
+      discount_3_items: bundleData.discount_3_items, // ADDED
     });
 
     // Create bundle items
-    const bundleItemsResult = createBundleItemsStep({
+    const bundleItems = createBundleItemsStep({
       bundle_id: bundle.id,
       items: bundleData.items,
     });
 
-    // Link each bundle item to its corresponding product
-    const bundleItemProductLinks = transform(
+    // Create remote links between bundle items and products
+    const bundleProductLinks = transform(
       {
         bundleData,
-        bundleItemsResult,
+        bundleItems,
       },
       (data) => {
-        return data.bundleItemsResult.bundleItems.map((item, index) => ({
-          [BUNDLED_PRODUCT_MODULE]: {
-            bundle_item_id: item.id,
-          },
-          [Modules.PRODUCT]: {
-            product_id: data.bundleData.items[index].product_id,
-          },
-        }));
+        return Array.isArray(data.bundleItems)
+          ? data.bundleItems.map((item, index) => ({
+              [BUNDLED_PRODUCT_MODULE]: {
+                bundle_item_id: item.id,
+              },
+              [Modules.PRODUCT]: {
+                product_id: data.bundleData.items[index].product_id,
+              },
+            }))
+          : [];
       }
     );
 
-    createRemoteLinkStep(bundleItemProductLinks).config({
-      name: "create-bundle-item-product-links",
+    createRemoteLinkStep(bundleProductLinks).config({
+      name: "create-bundle-product-items-links",
     });
 
-    // Retrieve the complete bundle with items and linked products
+    // Retrieve the complete bundle with items
     // @ts-ignore
     const { data } = useQueryGraphStep({
       entity: "bundle",

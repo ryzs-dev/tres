@@ -18,6 +18,7 @@ import {
   usePrompt,
   toast,
   Text,
+  Button,
 } from "@medusajs/ui";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -28,15 +29,15 @@ import { CreateFlexibleBundle } from "../../components/create-flexible-bundle";
 type FlexibleBundle = {
   id: string;
   title: string;
-  handle: string;
+  handle?: string;
   description?: string;
   is_active: boolean;
   min_items: number;
-  max_items?: number;
+  max_items?: number | null;
   selection_type: "flexible" | "required_all";
-  discount_2_items?: number;
-  discount_3_items?: number;
-  items: {
+  discount_2_items?: number | null;
+  discount_3_items?: number | null;
+  items?: {
     id: string;
     product: {
       id: string;
@@ -46,8 +47,8 @@ type FlexibleBundle = {
     is_optional: boolean;
     sort_order: number;
   }[];
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 };
 
 const BundleActionsCell = ({ bundle }: { bundle: FlexibleBundle }) => {
@@ -71,16 +72,20 @@ const BundleActionsCell = ({ bundle }: { bundle: FlexibleBundle }) => {
   });
 
   const handleDelete = async () => {
-    const confirmed = await prompt({
-      title: "Delete Bundle",
-      description: `Are you sure you want to delete "${bundle.title}"? This action cannot be undone.`,
-      confirmText: "Delete",
-      cancelText: "Cancel",
-      variant: "danger",
-    });
+    try {
+      const confirmed = await prompt({
+        title: "Delete Bundle",
+        description: `Are you sure you want to delete "${bundle.title}"? This action cannot be undone.`,
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        variant: "danger",
+      });
 
-    if (confirmed) {
-      await deleteBundle(bundle.id);
+      if (confirmed) {
+        await deleteBundle(bundle.id);
+      }
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
     }
   };
 
@@ -115,112 +120,158 @@ const columnHelper = createDataTableColumnHelper<FlexibleBundle>();
 const columns = [
   columnHelper.accessor("title", {
     header: "Bundle",
-    cell: ({ row }) => (
-      <div className="flex flex-col gap-1">
-        <div className="font-medium text-ui-fg-base">{row.original.title}</div>
-        <div className="text-sm text-ui-fg-muted">/{row.original.handle}</div>
-        {row.original.description && (
-          <div className="text-xs text-ui-fg-subtle line-clamp-2 max-w-xs">
-            {row.original.description}
-          </div>
-        )}
-      </div>
-    ),
-  }),
-  columnHelper.accessor("selection_type", {
-    header: "Type",
-    cell: ({ row }) => (
-      <Badge
-        size="small"
-        color={row.original.selection_type === "flexible" ? "green" : "blue"}
-      >
-        {row.original.selection_type === "flexible"
-          ? "Flexible"
-          : "Required All"}
-      </Badge>
-    ),
-  }),
-  columnHelper.accessor("min_items", {
-    header: "Rules",
-    cell: ({ row }) => (
-      <div className="text-sm space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-ui-fg-muted">Min:</span>
-          <span className="font-medium">{row.original.min_items}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-ui-fg-muted">Max:</span>
-          <span className="font-medium">
-            {row.original.max_items || "No limit"}
-          </span>
-        </div>
-      </div>
-    ),
-  }),
-  columnHelper.accessor("discount_2_items", {
-    header: "Discounts",
     cell: ({ row }) => {
-      const has2ItemDiscount = row.original.discount_2_items;
-      const has3ItemDiscount = row.original.discount_3_items;
-
-      if (!has2ItemDiscount && !has3ItemDiscount) {
-        return <div className="text-sm text-ui-fg-muted">No discounts</div>;
-      }
-
+      const bundle = row.original;
       return (
-        <div className="space-y-1">
-          {has2ItemDiscount && (
-            <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
-              2 items: {has2ItemDiscount}% off
-            </div>
+        <div className="flex flex-col gap-1">
+          <div className="font-medium text-ui-fg-base">
+            {bundle.title || "Untitled"}
+          </div>
+          {bundle.handle && (
+            <div className="text-sm text-ui-fg-muted">/{bundle.handle}</div>
           )}
-          {has3ItemDiscount && (
-            <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
-              3+ items: {has3ItemDiscount}% off
+          {bundle.description && (
+            <div className="text-xs text-ui-fg-subtle line-clamp-2 max-w-xs">
+              {bundle.description}
             </div>
           )}
         </div>
       );
     },
   }),
+  columnHelper.accessor("selection_type", {
+    header: "Type",
+    cell: ({ row }) => {
+      const selectionType = row.original.selection_type || "flexible";
+      return (
+        <Badge
+          size="small"
+          color={selectionType === "flexible" ? "green" : "blue"}
+        >
+          {selectionType === "flexible" ? "Flexible" : "Required All"}
+        </Badge>
+      );
+    },
+  }),
+  columnHelper.accessor("min_items", {
+    header: "Rules",
+    cell: ({ row }) => {
+      const bundle = row.original;
+      return (
+        <div className="text-sm space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-ui-fg-muted">Min:</span>
+            <span className="font-medium">{bundle.min_items || 1}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-ui-fg-muted">Max:</span>
+            <span className="font-medium">
+              {bundle.max_items || "No limit"}
+            </span>
+          </div>
+        </div>
+      );
+    },
+  }),
+  columnHelper.accessor("discount_2_items", {
+    header: "Discounts",
+    cell: ({ row }) => {
+      const bundle = row.original;
+      const has2ItemDiscount = bundle.discount_2_items;
+      const has3ItemDiscount = bundle.discount_3_items;
+
+      // Safe check for discount values
+      const hasValidDiscounts =
+        (typeof has2ItemDiscount === "number" && has2ItemDiscount !== null) ||
+        (typeof has3ItemDiscount === "number" && has3ItemDiscount !== null);
+
+      if (!hasValidDiscounts) {
+        return (
+          <div className="text-sm text-ui-fg-muted">
+            No discounts configured
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-1">
+          {typeof has2ItemDiscount === "number" &&
+            has2ItemDiscount !== null && (
+              <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
+                2 items: {has2ItemDiscount}% off
+              </div>
+            )}
+          {typeof has3ItemDiscount === "number" &&
+            has3ItemDiscount !== null && (
+              <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
+                3+ items: {has3ItemDiscount}% off
+              </div>
+            )}
+        </div>
+      );
+    },
+  }),
   columnHelper.accessor("items", {
     header: "Products",
-    cell: ({ row }) => (
-      <div className="space-y-1 max-w-xs">
-        {row.original.items.slice(0, 2).map((item) => (
-          <div key={item.id} className="flex items-center gap-2 text-sm">
-            <Link
-              to={`/products/${item.product.id}`}
-              className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover truncate"
-            >
-              {item.product.title}
-            </Link>
-            <span className="text-ui-fg-muted shrink-0">×{item.quantity}</span>
-            {item.is_optional && (
-              <Badge size="small" color="grey">
-                optional
-              </Badge>
-            )}
+    cell: ({ row }) => {
+      const items = row.original.items || [];
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return (
+          <div className="text-sm text-ui-fg-muted">No products configured</div>
+        );
+      }
+
+      return (
+        <div className="space-y-1 max-w-xs">
+          {items
+            .slice(0, 2)
+            .map((item) => {
+              if (!item || !item.product) return null;
+
+              return (
+                <div key={item.id} className="flex items-center gap-2 text-sm">
+                  <Link
+                    to={`/products/${item.product.id}`}
+                    className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover truncate"
+                  >
+                    {item.product.title || "Unknown Product"}
+                  </Link>
+                  <span className="text-ui-fg-muted shrink-0">
+                    ×{item.quantity || 1}
+                  </span>
+                  {item.is_optional && (
+                    <Badge size="small" color="grey">
+                      optional
+                    </Badge>
+                  )}
+                </div>
+              );
+            })
+            .filter(Boolean)}
+
+          {items.length > 2 && (
+            <div className="text-xs text-ui-fg-muted">
+              +{items.length - 2} more products
+            </div>
+          )}
+          <div className="text-xs text-ui-fg-subtle">
+            {items.length} total products
           </div>
-        ))}
-        {row.original.items.length > 2 && (
-          <div className="text-xs text-ui-fg-muted">
-            +{row.original.items.length - 2} more products
-          </div>
-        )}
-        <div className="text-xs text-ui-fg-subtle">
-          {row.original.items.length} total products
         </div>
-      </div>
-    ),
+      );
+    },
   }),
   columnHelper.accessor("is_active", {
     header: "Status",
-    cell: ({ row }) => (
-      <Badge size="small" color={row.original.is_active ? "green" : "red"}>
-        {row.original.is_active ? "Active" : "Inactive"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const isActive = row.original.is_active ?? true;
+      return (
+        <Badge size="small" color={isActive ? "green" : "red"}>
+          {isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   }),
   columnHelper.display({
     id: "actions",
@@ -241,19 +292,45 @@ const BundledProductsPage = () => {
     return pagination.pageIndex * limit;
   }, [pagination]);
 
-  const { data, isLoading, error } = useQuery<{
-    flexible_bundles: FlexibleBundle[];
-    count: number;
-  }>({
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["flexible-bundles", offset, limit],
-    queryFn: () =>
-      sdk.client.fetch("/admin/bundled-products", {
-        method: "GET",
-        query: {
-          limit,
-          offset,
-        },
-      }),
+    queryFn: async () => {
+      try {
+        type ResponseType = {
+          flexible_bundles?: FlexibleBundle[];
+          count?: number;
+        };
+
+        const response: ResponseType = await sdk.client.fetch(
+          "/admin/bundled-products",
+          {
+            method: "GET",
+            query: {
+              limit: limit.toString(),
+              offset: offset.toString(),
+            },
+          }
+        );
+
+        // Safely extract data
+        const bundles = response?.flexible_bundles || [];
+        const count = response?.count || 0;
+
+        console.log(`✅ Fetched ${bundles.length} bundles successfully`);
+
+        return {
+          flexible_bundles: Array.isArray(bundles) ? bundles : [],
+          count: typeof count === "number" ? count : 0,
+        };
+      } catch (error) {
+        console.error("❌ Error fetching bundles:", error);
+        throw error;
+      }
+    },
+    staleTime: 30 * 1000,
+    retry: 2,
   });
 
   const table = useDataTable({
@@ -267,16 +344,24 @@ const BundledProductsPage = () => {
     rowCount: data?.count ?? 0,
   });
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["flexible-bundles"] });
+    refetch();
+  };
+
   if (error) {
     return (
       <Container className="flex items-center justify-center py-12">
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <Text className="text-ui-fg-error mb-2">
             Failed to load flexible bundles
           </Text>
           <Text className="text-ui-fg-muted text-sm">
             {error instanceof Error ? error.message : "Unknown error occurred"}
           </Text>
+          <Button onClick={handleRefresh} variant="secondary">
+            Try Again
+          </Button>
         </div>
       </Container>
     );
@@ -303,7 +388,12 @@ const BundledProductsPage = () => {
               </Text>
             )}
           </div>
-          <CreateFlexibleBundle />
+          <div className="flex items-center gap-2">
+            <Button size="small" variant="secondary" onClick={handleRefresh}>
+              Refresh
+            </Button>
+            <CreateFlexibleBundle />
+          </div>
         </DataTable.Toolbar>
 
         {/* Empty State */}
