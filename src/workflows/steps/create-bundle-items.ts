@@ -24,6 +24,7 @@ export const createBundleItemsStep = createStep(
         quantity: item.quantity,
         is_optional: item.is_optional ?? true, // Default to optional for flexible bundles
         sort_order: item.sort_order ?? index, // Default to order in array
+        product_id: item.product_id, // ← Add this line!
       }))
     );
 

@@ -67,10 +67,10 @@ export const createFlexibleBundleWorkflow = createWorkflow(
         return Array.isArray(data.bundleItems)
           ? data.bundleItems.map((item, index) => ({
               [BUNDLED_PRODUCT_MODULE]: {
-                bundle_item_id: item.id,
+                id: item.id, // ← Correct key
               },
               [Modules.PRODUCT]: {
-                product_id: data.bundleData.items[index].product_id,
+                id: data.bundleData.items[index].product_id, // ← Also change to id
               },
             }))
           : [];

@@ -4,6 +4,7 @@ import { Bundle } from "./bundle";
 export const BundleItem = model.define("bundle_item", {
   id: model.id().primaryKey(),
   quantity: model.number().default(1),
+  product_id: model.text(), // ← Add this line!
   is_optional: model.boolean().default(true),
   sort_order: model.number().default(0),
 

@@ -171,6 +171,15 @@
           "default": "1",
           "mappedType": "integer"
         },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "text"
+        },
         "is_optional": {
           "name": "is_optional",
           "type": "boolean",

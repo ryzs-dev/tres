@@ -9,7 +9,7 @@ import {
   Switch,
   toast,
 } from "@medusajs/ui";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
 import { HttpTypes } from "@medusajs/framework/types";
@@ -58,18 +58,86 @@ export const CreateFlexibleBundle = () => {
 
   const queryClient = useQueryClient();
 
+  // Initial products load
+  const { data: initialProducts } = useQuery({
+    queryKey: ["products-initial"],
+    queryFn: async () => {
+      console.log("🔍 Loading products for bundle creation...");
+      try {
+        const response = await sdk.client.fetch("/admin/products", {
+          method: "GET",
+          query: {
+            limit: productsLimit,
+            offset: 0,
+          },
+        });
+
+        console.log("📦 Products response:", response);
+
+        const products =
+          (response as { products?: HttpTypes.AdminProduct[] }).products || [];
+        const typedResponse = response as {
+          count?: number;
+          products?: HttpTypes.AdminProduct[];
+        };
+        const count = typedResponse.count || products.length;
+
+        // Set state immediately
+        setProductsCount(count);
+        setProducts(products);
+
+        console.log("🔧 Products set in state:", products);
+        console.log("🔧 First product:", products[0]);
+
+        return products;
+      } catch (error) {
+        console.error("❌ Error loading products:", error);
+        toast.error("Failed to load products");
+        return [];
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      console.log(
+        "📝 useEffect: Setting products from query data:",
+        initialProducts
+      );
+      setProducts(initialProducts);
+      setProductsCount(initialProducts.length);
+    }
+  }, [initialProducts]);
+
+  // Pagination query (keep existing logic but with direct API call)
   useQuery({
     queryKey: ["products", currentProductPage],
     queryFn: async () => {
-      const { products, count } = await sdk.admin.product.list({
-        limit: productsLimit,
-        offset: currentProductPage * productsLimit,
-      });
-      setProductsCount(count);
-      setProducts((prev) => [...prev, ...products]);
-      return products;
+      if (currentProductPage === 0) return []; // Skip initial page
+
+      try {
+        const response = await sdk.client.fetch("/admin/products", {
+          method: "GET",
+          query: {
+            limit: productsLimit,
+            offset: currentProductPage * productsLimit,
+          },
+        });
+
+        const products =
+          (response as { products?: HttpTypes.AdminProduct[] }).products || [];
+        setProducts((prev) => [...prev, ...products]);
+
+        // Add this after setProducts(products); in your useQuery
+        console.log("🔧 Products set in state:", products);
+        console.log("🔧 First product:", products[0]);
+        return products;
+      } catch (error) {
+        console.error("❌ Error loading more products:", error);
+        return [];
+      }
     },
-    enabled: hasNextPage,
+    enabled: currentProductPage > 0 && hasNextPage,
   });
 
   const fetchMoreProducts = () => {
@@ -507,6 +575,12 @@ const FlexibleBundleItem = ({
   fetchMoreProducts,
   hasNextPage,
 }: FlexibleBundleItemProps) => {
+  // Add this debug log at the top of the component
+  console.log("🎯 FlexibleBundleItem props:", {
+    products: products?.length || 0,
+    firstProduct: products?.[0],
+    item,
+  });
   const observer = useRef(
     new IntersectionObserver(
       (entries) => {

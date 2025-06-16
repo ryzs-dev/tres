@@ -1,17 +1,13 @@
+// src/api/store/bundles/route.ts
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { QueryContext } from "@medusajs/framework/utils";
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   try {
     const query = req.scope.resolve("query");
     const { currency_code, region_id, limit = 12, offset = 0 } = req.query;
 
-    console.log("Store Bundles API called with:", {
-      currency_code,
-      region_id,
-      limit,
-      offset,
-    });
-
+    // Get bundles with items
     const { data: bundles, metadata } = await query.graph({
       entity: "bundle",
       fields: [
@@ -23,43 +19,56 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "min_items",
         "max_items",
         "selection_type",
-        "discount_2_items", // Include discount fields for frontend
-        "discount_3_items", // Include discount fields for frontend
+        "discount_2_items",
+        "discount_3_items",
         "created_at",
         "updated_at",
         "items.*",
-        "items.product.*",
-        "items.product.title",
-        "items.product.handle",
-        "items.product.thumbnail",
-        "items.product.status",
-        "items.product.variants.*",
-        "items.quantity",
-        "items.is_optional",
-        "items.sort_order",
       ],
-      filters: {
-        is_active: true, // Only show active bundles
-      },
+      filters: { is_active: true },
       pagination: {
         take: parseInt(limit as string) || 12,
         skip: parseInt(offset as string) || 0,
       },
     });
 
-    console.log(`Found ${bundles?.length || 0} bundles`);
+    // Fetch products for each bundle
+    const bundlesWithProducts = await Promise.all(
+      bundles.map(async (bundle) => {
+        const itemsWithProducts = await Promise.all(
+          bundle.items.map(async (item) => {
+            if (!item || !item.product_id) return item;
+
+            const { data: products } = await query.graph({
+              entity: "product",
+              fields: [
+                "id",
+                "title",
+                "handle",
+                "description",
+                "thumbnail",
+                "status",
+                "variants.*",
+              ],
+              filters: { id: item?.product_id || undefined },
+            });
+
+            return { ...item, product: products[0] || null };
+          })
+        );
+
+        return { ...bundle, items: itemsWithProducts };
+      })
+    );
 
     res.json({
-      bundles: bundles || [],
+      flexible_bundles: bundlesWithProducts,
       count: metadata?.count || 0,
       limit: parseInt(limit as string) || 12,
       offset: parseInt(offset as string) || 0,
     });
   } catch (error) {
-    console.error("Error fetching store bundles:", error);
-    res.status(500).json({
-      error: "Failed to fetch bundles",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    console.error("Error:", error);
+    res.status(500).json({ error: "Failed to fetch bundles" });
   }
 }
