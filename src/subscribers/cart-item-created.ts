@@ -1,10 +1,13 @@
-// src/subscribers/cart-item-created.ts
+// src/subscribers/cart-item-created.ts - FIXED WITH CORRECT EVENT
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 
 export default async function cartItemCreatedHandler({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string; cart_id: string }>) {
+  console.log("🚀 BUNDLE DISCOUNT SUBSCRIBER TRIGGERED!");
+  console.log("📦 Event data:", data);
+  
   const query = container.resolve("query");
 
   try {
@@ -16,13 +19,23 @@ export default async function cartItemCreatedHandler({
     });
 
     const cartItem = cartItems[0];
+    console.log("📦 Cart item found:", {
+      id: cartItem?.id,
+      unit_price: cartItem?.unit_price,
+      metadata: cartItem?.metadata
+    });
+    
     if (!cartItem || !cartItem.metadata?.is_from_bundle) {
-      return; // Not a bundle item, skip
+      console.log("⏭️  Not a bundle item, skipping");
+      return;
     }
+
+    console.log("✅ This IS a bundle item! Processing discount...");
 
     const discountRate = cartItem.metadata.bundle_discount_rate;
     if (!discountRate || discountRate === 0) {
-      return; // No discount to apply
+      console.log("❌ No discount rate found:", discountRate);
+      return;
     }
 
     // Get the original price from the variant
@@ -36,34 +49,44 @@ export default async function cartItemCreatedHandler({
       originalPrice = price.amount; // Keep in cents
     }
 
-    // Calculate discounted price (in cents, precise)
+    if (originalPrice === 0) {
+      console.log("❌ No price found for discount calculation");
+      return;
+    }
+
+    // Calculate discounted price
     const discountedPrice = Math.round(originalPrice * (1 - discountRate));
 
-    console.log(`Applying bundle discount to cart item ${cartItem.id}:`);
-    console.log(`  Original: ${originalPrice} cents`);
-    console.log(`  Discount: ${discountRate * 100}%`);
-    console.log(`  Final: ${discountedPrice} cents`);
+    console.log("💰 APPLYING DISCOUNT:");
+    console.log(`   Original: ${originalPrice} cents`);
+    console.log(`   Rate: ${discountRate} (${discountRate * 100}%)`);
+    console.log(`   Discounted: ${discountedPrice} cents`);
 
-    // Update the cart item with the discounted price
+    // CRITICAL: Update the cart item with the actual discounted unit_price
     const cartModuleService = container.resolve("cart");
 
-    await cartModuleService.updateCarts([
+    await cartModuleService.updateLineItems([
       {
         id: cartItem.id,
+        unit_price: discountedPrice, // This changes the actual price
         metadata: {
           ...cartItem.metadata,
           original_price_cents: originalPrice,
           discounted_price_cents: discountedPrice,
-        }, // Move price information into metadata
+          discount_applied: true,
+          discount_applied_at: new Date().toISOString(),
+        },
       },
     ]);
 
-    console.log(`✅ Bundle discount applied to cart item ${cartItem.id}`);
+    console.log("✅ DISCOUNT APPLIED SUCCESSFULLY!");
+    console.log(`   Item ${cartItem.id}: ${originalPrice} → ${discountedPrice} cents`);
+    
   } catch (error) {
-    console.error("Error applying bundle discount:", error);
+    console.error("❌ Error in bundle discount subscriber:", error);
   }
 }
 
 export const config: SubscriberConfig = {
-  event: "cart.item_added",
+  event: "cart.updated", // Try this event name instead
 };

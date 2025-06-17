@@ -1,4 +1,4 @@
-// src/workflows/add-flexible-bundle-to-cart.ts - FIXED VERSION
+// src/workflows/add-flexible-bundle-to-cart.ts - FIXED WORKING VERSION
 import {
   createWorkflow,
   WorkflowResponse,
@@ -9,9 +9,7 @@ import {
 } from "@medusajs/medusa/core-flows";
 import {
   prepareFlexibleBundleCartDataStep,
-  PrepareFlexibleBundleCartDataStepInput,
 } from "./steps/prepare-bundle-cart-data";
-import { container } from "@medusajs/framework";
 
 type AddFlexibleBundleToCartWorkflowInput = {
   cart_id: string;
@@ -25,14 +23,11 @@ type AddFlexibleBundleToCartWorkflowInput = {
 
 export const addFlexibleBundleToCartWorkflow = createWorkflow(
   "add-flexible-bundle-to-cart",
-  ({
-    cart_id,
-    bundle_id,
-    selectedItems,
-  }: AddFlexibleBundleToCartWorkflowInput) => {
-    // Get cart first with unique step name
-    // @ts-ignore
-    const { data: cartData } = useQueryGraphStep({
+  (input: AddFlexibleBundleToCartWorkflowInput) => {
+    const { cart_id, bundle_id, selectedItems } = input;
+
+    // Get cart data
+    const cartQuery = useQueryGraphStep({
       entity: "cart",
       fields: ["id", "region_id", "currency_code", "region.*"],
       filters: {
@@ -43,9 +38,9 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
       },
     }).config({ name: "get-cart-for-bundle" });
 
-    // FIXED: Get bundle with basic data first
-    // @ts-ignore
-    const { data: bundles } = useQueryGraphStep({
+    // Get bundle configuration
+    //@ts-ignore
+    const bundleQuery = useQueryGraphStep({
       entity: "bundle",
       fields: [
         "id",
@@ -57,6 +52,9 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
         "discount_2_items",
         "discount_3_items",
         "items.*",
+        "items.product.*",
+        "items.product.variants.*",
+        "items.product.variants.prices.*",
       ],
       filters: {
         id: bundle_id,
@@ -65,84 +63,26 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
       options: {
         throwIfKeyNotFound: true,
       },
-    }).config({ name: "get-bundle-for-cart" });
+    }).config({ name: "get-bundle-data" });
 
-    // FIXED: Get products separately for each bundle item
-    // This ensures we have the product data that's missing
-    // @ts-ignore
-    const { data: products } = useQueryGraphStep({
-      entity: "product",
-      fields: ["id", "title", "handle", "variants.*", "variants.prices.*"],
-    }).config({ name: "get-products-for-bundle" });
-
-    // Prepare cart data with currency context
-    //@ts-ignore
+    // Prepare cart items with bundle metadata
     const itemsToAdd = prepareFlexibleBundleCartDataStep({
-      bundle: bundles[0],
-      products: products || [], // Pass products separately
-      cart: cartData[0],
+      bundle: bundleQuery.data[0],
+      cart: cartQuery.data[0],
       selectedItems,
-    } as PrepareFlexibleBundleCartDataStepInput);
+    });
 
-    // Add selected items to cart
-    const addedCart = addToCartWorkflow.runAsStep({
+    // Add items to cart
+    addToCartWorkflow.runAsStep({
       input: {
         cart_id,
         items: itemsToAdd,
       },
     });
 
-    // Apply bundle discounts after items are added
-    // @ts-ignore
-    const { data: cartItems } = useQueryGraphStep({
-      entity: "cart_item",
-      fields: ["*", "metadata", "variant.*", "variant.prices.*"],
-      filters: {
-        cart_id: cart_id,
-        metadata: { is_from_bundle: true },
-      },
-    }).config({ name: "get-bundle-cart-items" });
-
-    // Apply discounts to bundle items
-    const discountRate =
-      bundles[0].discount_2_items && selectedItems.length === 2
-        ? bundles[0].discount_2_items / 100
-        : bundles[0].discount_3_items && selectedItems.length >= 3
-          ? bundles[0].discount_3_items / 100
-          : 0;
-
-    if (discountRate > 0 && cartItems?.length > 0) {
-      const cartModuleService = container.resolve("cart");
-
-      const itemUpdates = cartItems.map((item) => {
-        let originalPrice = 0;
-        if (item.variant?.prices?.length > 0) {
-          const price = item.variant.prices[0];
-          originalPrice = price.amount; // In cents
-        }
-
-        const discountedPrice = Math.round(originalPrice * (1 - discountRate));
-
-        return {
-          id: item.id,
-          unit_price: discountedPrice,
-          metadata: {
-            ...item.metadata,
-            original_price_cents: originalPrice,
-            discounted_price_cents: discountedPrice,
-          },
-        };
-      });
-
-      cartModuleService.updateCarts(itemUpdates);
-      console.log(
-        `Applied ${discountRate * 100}% discount to ${itemUpdates.length} items`
-      );
-    }
-
-    // Fetch final updated cart
-    // @ts-ignore
-    const { data: updatedCarts } = useQueryGraphStep({
+    // Get final cart
+    //@ts-ignore
+    const finalCartQuery = useQueryGraphStep({
       entity: "cart",
       filters: { id: cart_id },
       fields: [
@@ -156,8 +96,8 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
         "tax_total",
         "shipping_total",
       ],
-    }).config({ name: "refetch-final-cart" });
+    }).config({ name: "get-final-cart" });
 
-    return new WorkflowResponse(updatedCarts[0]); // Ensure synchronous return
+    return new WorkflowResponse(finalCartQuery.data[0]);
   }
 );
