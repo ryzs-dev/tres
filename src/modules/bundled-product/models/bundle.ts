@@ -5,6 +5,8 @@ import { BundleItem } from "./bundle-item";
 export const Bundle = model.define("bundle", {
   id: model.id().primaryKey(),
   title: model.text(),
+  description: model.text().nullable(),
+  collection_id: model.text().nullable(), // Add this to link to ProductCollection
   items: model.hasMany(() => BundleItem, {
     mappedBy: "bundle",
   }),
