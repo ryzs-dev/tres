@@ -48,13 +48,12 @@ export const CreateFlexibleBundle = () => {
   ]);
 
   const [products, setProducts] = useState<HttpTypes.AdminProduct[]>([]);
-  const productsLimit = 15;
   const [currentProductPage, setCurrentProductPage] = useState(0);
   const [productsCount, setProductsCount] = useState(0);
 
   const hasNextPage = useMemo(() => {
-    return productsCount ? productsCount > productsLimit : true;
-  }, [productsCount, productsLimit]);
+    return productsCount ? productsCount : true;
+  }, [productsCount]);
 
   const queryClient = useQueryClient();
 
@@ -67,7 +66,6 @@ export const CreateFlexibleBundle = () => {
         const response = await sdk.client.fetch("/admin/products", {
           method: "GET",
           query: {
-            limit: productsLimit,
             offset: 0,
           },
         });
@@ -118,10 +116,6 @@ export const CreateFlexibleBundle = () => {
       try {
         const response = await sdk.client.fetch("/admin/products", {
           method: "GET",
-          query: {
-            limit: productsLimit,
-            offset: currentProductPage * productsLimit,
-          },
         });
 
         const products =
@@ -137,7 +131,6 @@ export const CreateFlexibleBundle = () => {
         return [];
       }
     },
-    enabled: currentProductPage > 0 && hasNextPage,
   });
 
   const fetchMoreProducts = () => {
@@ -494,7 +487,7 @@ export const CreateFlexibleBundle = () => {
                       setItems={setItems}
                       products={products}
                       fetchMoreProducts={fetchMoreProducts}
-                      hasNextPage={hasNextPage}
+                      hasNextPage={false}
                     />
                   ))}
                 </div>
