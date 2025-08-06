@@ -22,48 +22,75 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
   });
 
   const formatPrice = (price: BigNumberValue) => {
-    if (typeof price === "number") {
-      return formatter.format(price);
-    }
-
-    if (typeof price === "string") {
-      return formatter.format(parseFloat(price));
-    }
-
+    if (typeof price === "number") return formatter.format(price);
+    if (typeof price === "string") return formatter.format(parseFloat(price));
     return price?.toString() || "";
   };
 
   return (
-    <Html>
-      <Heading>Thank you for your order</Heading>
-      {order.email}'s Items
-      <Container>
-        {order.items?.map((item) => {
-          return (
-            <Section
-              key={item.id}
-              style={{ paddingTop: "40px", paddingBottom: "40px" }}
-            >
-              <Row>
-                <Column className="bg-black">
-                  <Img
-                    src={item.thumbnail || ""}
-                    alt={item.product_title || ""}
-                    style={{ float: "left" }}
-                    width="260px"
-                  />
-                </Column>
-                <Column style={{ verticalAlign: "top", paddingLeft: "12px" }}>
-                  <Text style={{ fontWeight: "500" }}>
-                    {item.product_title}
+    <Html lang="en">
+      <Container style={{ padding: "32px", fontFamily: "Arial, sans-serif" }}>
+        <Heading style={{ fontSize: "24px", marginBottom: "12px" }}>
+          Thank you for your order!
+        </Heading>
+        <Text style={{ fontSize: "14px", marginBottom: "24px" }}>
+          Here's a summary of your purchase, <strong>{order.email}</strong>:
+        </Text>
+
+        {order.items?.map((item) => (
+          <Section
+            key={item.id}
+            style={{
+              padding: "20px 0",
+              borderTop: "1px solid #eaeaea",
+              display: "flex",
+            }}
+          >
+            <Row>
+              <Column style={{ width: "100px" }}>
+                <Img
+                  src={item.thumbnail || "https://via.placeholder.com/100"}
+                  alt={item.product_title || "Product image"}
+                  width="100"
+                  height="auto"
+                  style={{
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              </Column>
+
+              <Column style={{ paddingLeft: "16px", verticalAlign: "top" }}>
+                <Text
+                  style={{ margin: "0", fontWeight: "600", fontSize: "14px" }}
+                >
+                  {item.product_title}
+                </Text>
+                {item.variant_title && (
+                  <Text
+                    style={{
+                      margin: "4px 0 0 0",
+                      fontSize: "13px",
+                      color: "#666",
+                    }}
+                  >
+                    {item.variant_title}
                   </Text>
-                  <Text>{item.variant_title}</Text>
-                  <Text>{formatPrice(item.total)}</Text>
-                </Column>
-              </Row>
-            </Section>
-          );
-        })}
+                )}
+                <Text
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  {formatPrice(item.total)}
+                </Text>
+              </Column>
+            </Row>
+          </Section>
+        ))}
       </Container>
     </Html>
   );

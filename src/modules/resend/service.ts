@@ -9,6 +9,7 @@ import {
 } from "@medusajs/framework/types";
 import { CreateEmailOptions, Resend } from "resend";
 import { orderPlacedEmail } from "./emails/order-placed";
+import { newUserEmail } from "./emails/new-user";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -16,11 +17,13 @@ type InjectedDependencies = {
 
 enum Templates {
   ORDER_PLACED = "order-placed",
+  NEW_USER = "new-user",
 }
 
 const templates: { [key in Templates]?: (props: unknown) => React.ReactNode } =
   {
     [Templates.ORDER_PLACED]: orderPlacedEmail,
+    [Templates.NEW_USER]: newUserEmail,
   };
 
 type ResendOptions = {
