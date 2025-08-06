@@ -9,7 +9,7 @@ import {
 } from "@medusajs/framework/types";
 import { CreateEmailOptions, Resend } from "resend";
 import { orderPlacedEmail } from "./emails/order-placed";
-import { newUserEmail } from "./emails/new-user";
+import { NewUserEmail } from "./emails/new-user";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -23,7 +23,7 @@ enum Templates {
 const templates: { [key in Templates]?: (props: unknown) => React.ReactNode } =
   {
     [Templates.ORDER_PLACED]: orderPlacedEmail,
-    [Templates.NEW_USER]: newUserEmail,
+    [Templates.NEW_USER]: NewUserEmail,
   };
 
 type ResendOptions = {
@@ -86,6 +86,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     switch (template) {
       case Templates.ORDER_PLACED:
         return "Order Confirmation";
+      case Templates.NEW_USER:
+        return "Welcome to Tres!"; // <-- Add your custom subject here
       default:
         return "New Email";
     }
@@ -114,15 +116,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       emailOptions.html = template;
     } else {
       emailOptions.react = template(notification.data);
-      if (emailOptions.html) {
-        if (emailOptions.html) {
-          if (emailOptions.html) {
-            if (emailOptions.html) {
-              delete (emailOptions as any).html; // ✅ Bypasses TypeScript check (not recommended)
-            }
-          }
-        }
-      }
+      delete (emailOptions as any).html;
     }
 
     const { data, error } = await this.resendClient.emails.send(emailOptions);
