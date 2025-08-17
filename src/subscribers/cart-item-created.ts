@@ -1,5 +1,25 @@
-// src/subscribers/cart-item-created.ts - TOTAL CART DISCOUNT VERSION
+// src/subscribers/cart-item-created.ts - FIXED TYPESCRIPT VERSION
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
+
+// Define proper types for cart items
+interface CartItem {
+  id: string;
+  unit_price: number;
+  quantity: number;
+  metadata?: {
+    is_from_bundle?: boolean;
+    bundle_id?: string;
+    bundle_discount_type?: string;
+    bundle_discount_rate?: number;
+    fixed_discount_amount?: number;
+    discount_applied?: boolean;
+    [key: string]: any;
+  };
+}
+
+interface BundleGroups {
+  [bundleId: string]: CartItem[];
+}
 
 export default async function cartItemCreatedHandler({
   event: { data },
@@ -32,22 +52,22 @@ export default async function cartItemCreatedHandler({
 
     console.log(`📦 Found cart with ${cart.items.length} items`);
 
-    // Group bundle items by bundle_id
-    const bundleGroups = cart.items
-      .filter((item) => item?.metadata?.is_from_bundle === true)
-      .reduce(
-        (groups, item) => {
-          const bundleId = item?.metadata?.bundle_id as string;
-          if (!bundleId) return groups;
+    // Group bundle items by bundle_id with proper typing
+    const bundleGroups: BundleGroups = cart.items
+      .filter(
+        (item: any): item is CartItem =>
+          item !== null && item?.metadata?.is_from_bundle === true
+      )
+      .reduce((groups: BundleGroups, item: any) => {
+        const bundleId = item?.metadata?.bundle_id as string;
+        if (!bundleId) return groups;
 
-          if (!groups[bundleId]) {
-            groups[bundleId] = [];
-          }
-          groups[bundleId].push(item);
-          return groups;
-        },
-        {} as Record<string, any[]>
-      );
+        if (!groups[bundleId]) {
+          groups[bundleId] = [];
+        }
+        groups[bundleId].push(item);
+        return groups;
+      }, {} as BundleGroups);
 
     if (Object.keys(bundleGroups).length === 0) {
       console.log("⏭️  No bundle items found, skipping");
@@ -56,15 +76,18 @@ export default async function cartItemCreatedHandler({
 
     const cartModuleService = container.resolve("cart");
 
-    // Process each bundle group
-    for (const [bundleId, bundleItems] of Object.entries(bundleGroups)) {
+    // Process each bundle group with proper typing
+    for (const [bundleId, bundleItems] of Object.entries(bundleGroups) as [
+      string,
+      CartItem[],
+    ][]) {
       console.log(
         `\n🎯 Processing bundle ${bundleId} with ${bundleItems.length} items`
       );
 
       // Check if this bundle already has discount applied
       const alreadyProcessed = bundleItems.some(
-        (item) => item.metadata?.discount_applied
+        (item: CartItem) => item.metadata?.discount_applied
       );
       if (alreadyProcessed) {
         console.log(
@@ -75,9 +98,9 @@ export default async function cartItemCreatedHandler({
 
       // Get discount configuration from first item (all items in bundle have same config)
       const firstItem = bundleItems[0];
-      const discountType = firstItem.metadata.bundle_discount_type;
-      const discountRate = firstItem.metadata.bundle_discount_rate;
-      const fixedDiscountAmount = firstItem.metadata.fixed_discount_amount;
+      const discountType = firstItem.metadata?.bundle_discount_type;
+      const discountRate = firstItem.metadata?.bundle_discount_rate;
+      const fixedDiscountAmount = firstItem.metadata?.fixed_discount_amount;
       const itemCount = bundleItems.length;
 
       console.log("🎯 Bundle discount configuration:", {
@@ -96,13 +119,17 @@ export default async function cartItemCreatedHandler({
 
       // Calculate total bundle value and total discount
       const bundleTotal = bundleItems.reduce(
-        (sum, item) => sum + item.unit_price * item.quantity,
+        (sum: number, item: CartItem) => sum + item.unit_price * item.quantity,
         0
       );
       let totalDiscountAmount = 0;
 
       // Handle Fixed Discount - TOTAL discount for the entire bundle
-      if (discountType === "fixed" && fixedDiscountAmount > 0) {
+      if (
+        discountType === "fixed" &&
+        fixedDiscountAmount &&
+        fixedDiscountAmount > 0
+      ) {
         // fixedDiscountAmount is total discount for the bundle in cents
         totalDiscountAmount = fixedDiscountAmount / 100; // Convert to RM
 
@@ -113,6 +140,7 @@ export default async function cartItemCreatedHandler({
       // Handle Percentage Discount
       else if (
         (discountType === "percentage" || !discountType) &&
+        discountRate &&
         discountRate > 0
       ) {
         totalDiscountAmount = bundleTotal * discountRate;
@@ -130,7 +158,7 @@ export default async function cartItemCreatedHandler({
 
       // Distribute the total discount proportionally across all items in the bundle
       let remainingDiscount = totalDiscountAmount;
-      const itemUpdates = [];
+      const itemUpdates: any[] = [];
 
       for (let i = 0; i < bundleItems.length; i++) {
         const item = bundleItems[i];
@@ -138,7 +166,7 @@ export default async function cartItemCreatedHandler({
         const itemProportion = itemTotal / bundleTotal;
 
         // Calculate this item's share of the discount
-        let itemDiscountAmount;
+        let itemDiscountAmount: number;
         if (i === bundleItems.length - 1) {
           // Last item gets the remainder to avoid rounding errors
           itemDiscountAmount = remainingDiscount;
@@ -156,7 +184,6 @@ export default async function cartItemCreatedHandler({
           `   Item ${item.id}: ${originalUnitPrice} RM → ${newUnitPrice} RM (discount: ${discountPerUnit} RM per unit)`
         );
 
-        // @ts-ignore
         itemUpdates.push({
           id: item.id,
           unit_price: newUnitPrice,
