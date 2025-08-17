@@ -69,7 +69,7 @@ export const removeFlexibleBundleFromCartWorkflow = createWorkflow(
     deleteLineItemsWorkflow.runAsStep({
       input: {
         cart_id,
-        ids: itemsToRemove.filter((id): id is string => id !== undefined),
+        ids: itemsToRemove,
       },
     });
 
