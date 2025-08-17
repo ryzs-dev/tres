@@ -80,7 +80,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
                 // Find price for the requested currency or default to first price
                 const price =
                   variant.prices.find(
-                    (p) => p.currency_code === currency_code
+                    (p) => p?.currency_code === currency_code
                   ) || variant.prices[0];
 
                 // Add calculated_price_number for compatibility
