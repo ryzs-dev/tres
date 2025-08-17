@@ -1,12 +1,43 @@
+// src/api/middlewares.ts - FIXED SCHEMA
 import {
   defineMiddlewares,
   validateAndTransformBody,
   validateAndTransformQuery,
 } from "@medusajs/framework/http";
 import { createFindParams } from "@medusajs/medusa/api/utils/validators";
+import { z } from "zod";
 import { PostFlexibleBundleSchema } from "./admin/bundled-products/route";
 import { PostFlexibleBundleToCartSchema } from "./store/carts/[id]/flexible-bundle-items/route";
-import { z } from "zod";
+
+// FIXED: Update schema for editing bundles with proper null handling
+export const UpdateFlexibleBundleSchema = z.object({
+  title: z.string().optional(),
+  handle: z.string().optional(),
+  description: z.string().optional(),
+  is_active: z.boolean().optional(),
+  min_items: z.number().optional(),
+  max_items: z.number().nullable().optional(),
+  selection_type: z.enum(["flexible", "required_all"]).optional(),
+
+  // FIXED: Allow null values for discount fields using nullable()
+  discount_type: z.enum(["percentage", "fixed"]).nullable().optional(),
+  discount_2_items: z.number().min(0).max(100).nullable().optional(),
+  discount_3_items: z.number().min(0).max(100).nullable().optional(),
+  discount_2_items_amount: z.number().min(0).nullable().optional(),
+  discount_3_items_amount: z.number().min(0).nullable().optional(),
+
+  items: z
+    .array(
+      z.object({
+        id: z.string().optional(), // For existing items
+        product_id: z.string(),
+        quantity: z.number().min(1),
+        is_optional: z.boolean().optional().default(true),
+        sort_order: z.number().optional(),
+      })
+    )
+    .optional(),
+});
 
 // Custom schema for storefront bundle queries with currency/region support
 const StorefrontBundleQuery = createFindParams().merge(
@@ -38,8 +69,11 @@ export default defineMiddlewares({
             "min_items",
             "max_items",
             "selection_type",
+            "discount_type",
             "discount_2_items",
             "discount_3_items",
+            "discount_2_items_amount",
+            "discount_3_items_amount",
             "items.*",
             "items.product.*",
           ],
@@ -48,7 +82,8 @@ export default defineMiddlewares({
         }),
       ],
     },
-    // Individual bundle routes (GET by ID and DELETE)
+
+    // Individual bundle routes
     {
       matcher: "/admin/bundled-products/:id",
       methods: ["GET"],
@@ -63,8 +98,11 @@ export default defineMiddlewares({
             "min_items",
             "max_items",
             "selection_type",
+            "discount_type",
             "discount_2_items",
             "discount_3_items",
+            "discount_2_items_amount",
+            "discount_3_items_amount",
             "items.*",
             "items.product.*",
             "items.product.variants.*",
@@ -72,12 +110,18 @@ export default defineMiddlewares({
         }),
       ],
     },
+
+    // FIXED: PUT route for updating bundles
+    {
+      matcher: "/admin/bundled-products/:id",
+      methods: ["PUT"],
+      middlewares: [validateAndTransformBody(UpdateFlexibleBundleSchema)],
+    },
+
     {
       matcher: "/admin/bundled-products/:id",
       methods: ["DELETE"],
-      middlewares: [
-        // No body validation needed for DELETE, just URL params
-      ],
+      middlewares: [],
     },
 
     // Storefront routes - Customer-facing bundle endpoints
@@ -95,8 +139,11 @@ export default defineMiddlewares({
             "min_items",
             "max_items",
             "selection_type",
+            "discount_type",
             "discount_2_items",
             "discount_3_items",
+            "discount_2_items_amount",
+            "discount_3_items_amount",
             "items.*",
             "items.product.*",
           ],
@@ -119,8 +166,11 @@ export default defineMiddlewares({
             "min_items",
             "max_items",
             "selection_type",
+            "discount_type",
             "discount_2_items",
             "discount_3_items",
+            "discount_2_items_amount",
+            "discount_3_items_amount",
             "items.*",
             "items.product.*",
             "items.product.variants.*",
@@ -142,8 +192,11 @@ export default defineMiddlewares({
             "min_items",
             "max_items",
             "selection_type",
+            "discount_type",
             "discount_2_items",
             "discount_3_items",
+            "discount_2_items_amount",
+            "discount_3_items_amount",
             "items.*",
             "items.product.*",
             "items.product.variants.*",
@@ -152,7 +205,7 @@ export default defineMiddlewares({
       ],
     },
 
-    // Cart bundle items routes - Customer cart operations
+    // Cart bundle items routes
     {
       matcher: "/store/carts/:id/flexible-bundle-items",
       methods: ["POST"],
@@ -161,9 +214,7 @@ export default defineMiddlewares({
     {
       matcher: "/store/carts/:id/flexible-bundle-items/:bundle_id",
       methods: ["DELETE"],
-      middlewares: [
-        // No body validation needed for DELETE, uses URL params and query params
-      ],
+      middlewares: [],
     },
   ],
 });

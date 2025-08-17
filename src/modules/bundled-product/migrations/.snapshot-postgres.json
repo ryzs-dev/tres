@@ -21,7 +21,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "mappedType": "text"
         },
         "description": {
@@ -90,6 +90,24 @@
           "default": "true",
           "mappedType": "boolean"
         },
+        "discount_2_items_amount": {
+          "name": "discount_2_items_amount",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "integer"
+        },
+        "discount_3_items_amount": {
+          "name": "discount_3_items_amount",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "integer"
+        },
         "discount_2_items": {
           "name": "discount_2_items",
           "type": "integer",
@@ -107,6 +125,16 @@
           "primary": false,
           "nullable": true,
           "mappedType": "integer"
+        },
+        "discount_type": {
+          "name": "discount_type",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "'fixed'",
+          "mappedType": "text"
         },
         "created_at": {
           "name": "created_at",

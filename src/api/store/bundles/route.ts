@@ -7,7 +7,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     const query = req.scope.resolve("query");
     const { currency_code, region_id, limit = 12, offset = 0 } = req.query;
 
-    // Get bundles with items
+    // Get bundles with items - UPDATED to include all discount fields
     const { data: bundles, metadata } = await query.graph({
       entity: "bundle",
       fields: [
@@ -19,8 +19,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "min_items",
         "max_items",
         "selection_type",
-        "discount_2_items",
-        "discount_3_items",
+        // UPDATED: Include all discount fields
+        "discount_type", // NEW: "percentage" or "fixed"
+        "discount_2_items", // Percentage for 2 items
+        "discount_3_items", // Percentage for 3+ items
+        "discount_2_items_amount", // NEW: Fixed amount for 2 items (cents)
+        "discount_3_items_amount", // NEW: Fixed amount for 3+ items (cents)
         "created_at",
         "updated_at",
         "items.*",

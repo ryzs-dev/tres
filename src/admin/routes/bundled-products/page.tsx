@@ -1,3 +1,4 @@
+// src/admin/routes/bundled-products/page.tsx - UPDATED WITH EDIT FUNCTIONALITY
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
   CubeSolid,
@@ -25,7 +26,9 @@ import { useMemo, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { Link } from "react-router-dom";
 import { CreateFlexibleBundle } from "../../components/create-flexible-bundle";
+import { EditFlexibleBundle } from "../../components/edit-flexible-bundle";
 
+// UPDATED: Type definition with complete fixed discount support
 type FlexibleBundle = {
   id: string;
   title: string;
@@ -35,13 +38,23 @@ type FlexibleBundle = {
   min_items: number;
   max_items?: number | null;
   selection_type: "flexible" | "required_all";
+
+  // NEW: Complete discount support
+  discount_type?: "fixed" | "percentage";
+  discount_2_items_amount?: number | null;
+  discount_3_items_amount?: number | null;
+
+  // Legacy percentage discounts
   discount_2_items?: number | null;
   discount_3_items?: number | null;
+
   items?: {
     id: string;
+    product_id: string;
     product: {
       id: string;
       title: string;
+      status?: string;
     };
     quantity: number;
     is_optional: boolean;
@@ -54,6 +67,8 @@ type FlexibleBundle = {
 const BundleActionsCell = ({ bundle }: { bundle: FlexibleBundle }) => {
   const queryClient = useQueryClient();
   const prompt = usePrompt();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [bundleToEdit, setBundleToEdit] = useState<FlexibleBundle | null>(null);
 
   const { mutateAsync: deleteBundle, isPending: isDeleting } = useMutation({
     mutationFn: async (bundleId: string) => {
@@ -70,6 +85,31 @@ const BundleActionsCell = ({ bundle }: { bundle: FlexibleBundle }) => {
       toast.error("Failed to delete bundle");
     },
   });
+
+  // Fetch bundle details for editing
+  const { mutateAsync: fetchBundleDetails } = useMutation({
+    mutationFn: async (bundleId: string) => {
+      const response = await sdk.client.fetch(
+        `/admin/bundled-products/${bundleId}`,
+        {
+          method: "GET",
+        }
+      );
+      return (response as { bundle: FlexibleBundle }).bundle;
+    },
+    onSuccess: (bundleData) => {
+      setBundleToEdit(bundleData);
+      setEditModalOpen(true);
+    },
+    onError: (error) => {
+      console.error("Error fetching bundle details:", error);
+      toast.error("Failed to load bundle details");
+    },
+  });
+
+  const handleEdit = async () => {
+    await fetchBundleDetails(bundle.id);
+  };
 
   const handleDelete = async () => {
     try {
@@ -90,29 +130,92 @@ const BundleActionsCell = ({ bundle }: { bundle: FlexibleBundle }) => {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenu.Trigger asChild>
-        <IconButton variant="transparent" className="text-ui-fg-muted">
-          <EllipsisHorizontal />
-        </IconButton>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content align="end">
-        <DropdownMenu.Item className="gap-x-2">
-          <PencilSquare className="text-ui-fg-subtle" />
-          Edit Bundle
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item
-          className="gap-x-2 text-ui-fg-error"
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          <Trash className="text-ui-fg-error" />
-          {isDeleting ? "Deleting..." : "Delete Bundle"}
-        </DropdownMenu.Item>
-      </DropdownMenu.Content>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenu.Trigger asChild>
+          <IconButton variant="transparent" className="text-ui-fg-muted">
+            <EllipsisHorizontal />
+          </IconButton>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="end">
+          <DropdownMenu.Item className="gap-x-2" onClick={handleEdit}>
+            <PencilSquare className="text-ui-fg-subtle" />
+            Edit Bundle
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator />
+          <DropdownMenu.Item
+            className="gap-x-2 text-ui-fg-error"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash className="text-ui-fg-error" />
+            {isDeleting ? "Deleting..." : "Delete Bundle"}
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>
+
+      {/* Edit Modal */}
+      {bundleToEdit && (
+        <EditFlexibleBundle
+          bundle={bundleToEdit}
+          open={editModalOpen}
+          onOpenChange={(open) => {
+            setEditModalOpen(open);
+            if (!open) setBundleToEdit(null);
+          }}
+        />
+      )}
+    </>
   );
+};
+
+// UPDATED: Helper function to format discount display
+const formatDiscountDisplay = (bundle: FlexibleBundle) => {
+  const discountType = bundle.discount_type || "percentage";
+
+  if (discountType === "fixed") {
+    // Fixed discounts
+    const discounts = [];
+    if (bundle.discount_2_items_amount) {
+      discounts.push({
+        items: "2 items",
+        value: `RM${(bundle.discount_2_items_amount / 100).toFixed(2)} off`,
+        type: "fixed",
+      });
+    }
+    if (bundle.discount_3_items_amount) {
+      discounts.push({
+        items: "3+ items",
+        value: `RM${(bundle.discount_3_items_amount / 100).toFixed(2)} off`,
+        type: "fixed",
+      });
+    }
+    return discounts;
+  } else {
+    // Percentage discounts
+    const discounts = [];
+    if (
+      typeof bundle.discount_2_items === "number" &&
+      bundle.discount_2_items !== null
+    ) {
+      discounts.push({
+        items: "2 items",
+        value: `${bundle.discount_2_items}% off`,
+        type: "percentage",
+      });
+    }
+    if (
+      typeof bundle.discount_3_items === "number" &&
+      bundle.discount_3_items !== null
+    ) {
+      discounts.push({
+        items: "3+ items",
+        value: `${bundle.discount_3_items}% off`,
+        type: "percentage",
+      });
+    }
+    return discounts;
+  }
 };
 
 const columnHelper = createDataTableColumnHelper<FlexibleBundle>();
@@ -173,19 +276,16 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("discount_2_items", {
+  // UPDATED: Enhanced discounts column with fixed discount support
+  columnHelper.display({
+    id: "discounts",
     header: "Discounts",
     cell: ({ row }) => {
       const bundle = row.original;
-      const has2ItemDiscount = bundle.discount_2_items;
-      const has3ItemDiscount = bundle.discount_3_items;
+      const discounts = formatDiscountDisplay(bundle);
+      const discountType = bundle.discount_type || "percentage";
 
-      // Safe check for discount values
-      const hasValidDiscounts =
-        (typeof has2ItemDiscount === "number" && has2ItemDiscount !== null) ||
-        (typeof has3ItemDiscount === "number" && has3ItemDiscount !== null);
-
-      if (!hasValidDiscounts) {
+      if (!discounts || discounts.length === 0) {
         return (
           <div className="text-sm text-ui-fg-muted">
             No discounts configured
@@ -194,19 +294,23 @@ const columns = [
       }
 
       return (
-        <div className="space-y-1">
-          {typeof has2ItemDiscount === "number" &&
-            has2ItemDiscount !== null && (
-              <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
-                2 items: {has2ItemDiscount}% off
+        <div className="space-y-2">
+          {/* Discount Type Badge */}
+          <Badge
+            size="small"
+            color={discountType === "fixed" ? "orange" : "purple"}
+          >
+            {discountType === "fixed" ? "Fixed Amount" : "Percentage"}
+          </Badge>
+
+          {/* Discount Details */}
+          <div className="space-y-1">
+            {discounts.map((discount, index) => (
+              <div key={index} className="text-xs px-2 py-1 rounded border">
+                {discount.items}: {discount.value}
               </div>
-            )}
-          {typeof has3ItemDiscount === "number" &&
-            has3ItemDiscount !== null && (
-              <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
-                3+ items: {has3ItemDiscount}% off
-              </div>
-            )}
+            ))}
+          </div>
         </div>
       );
     },
@@ -298,27 +402,55 @@ const BundledProductsPage = () => {
     queryKey: ["flexible-bundles", offset, limit],
     queryFn: async () => {
       try {
-        type ResponseType = {
-          flexible_bundles?: FlexibleBundle[];
-          count?: number;
-        };
+        console.log("🔍 Fetching bundles from API...");
 
-        const response: ResponseType = await sdk.client.fetch(
-          "/admin/bundled-products",
-          {
-            method: "GET",
-            query: {
-              limit: limit.toString(),
-              offset: offset.toString(),
+        // Add cache-busting parameter to prevent 304 responses
+        const timestamp = Date.now();
+        const response = await sdk.client.fetch("/admin/bundled-products", {
+          method: "GET",
+          query: {
+            limit: limit.toString(),
+            offset: offset.toString(),
+          },
+        });
+
+        console.log("📦 API Response:", response);
+
+        // Handle both possible response structures
+        let bundles = [];
+        let count = 0;
+
+        if (response.flexible_bundles) {
+          // New API structure
+          bundles = response.flexible_bundles;
+          count = response.count || 0;
+        } else if (response.bundles) {
+          // Fallback structure
+          bundles = response.bundles;
+          count = response.count || 0;
+        } else {
+          console.warn("⚠️ Unexpected API response structure:", response);
+        }
+
+        console.log(`✅ Processed ${bundles.length} bundles (total: ${count})`);
+
+        // Log the first bundle's discount data for debugging
+        if (bundles.length > 0) {
+          const firstBundle = bundles[0];
+          console.log("💰 First bundle discount data:", {
+            discount_type: firstBundle.discount_type,
+            discount_2_items_amount: firstBundle.discount_2_items_amount,
+            discount_3_items_amount: firstBundle.discount_3_items_amount,
+            converted_to_RM: {
+              discount_2_items: firstBundle.discount_2_items_amount
+                ? firstBundle.discount_2_items_amount / 100
+                : null,
+              discount_3_items: firstBundle.discount_3_items_amount
+                ? firstBundle.discount_3_items_amount / 100
+                : null,
             },
-          }
-        );
-
-        // Safely extract data
-        const bundles = response?.flexible_bundles || [];
-        const count = response?.count || 0;
-
-        console.log(`✅ Fetched ${bundles.length} bundles successfully`);
+          });
+        }
 
         return {
           flexible_bundles: Array.isArray(bundles) ? bundles : [],
@@ -329,7 +461,7 @@ const BundledProductsPage = () => {
         throw error;
       }
     },
-    staleTime: 30 * 1000,
+    staleTime: 0, // Always fetch fresh data
     retry: 2,
   });
 
@@ -345,6 +477,8 @@ const BundledProductsPage = () => {
   });
 
   const handleRefresh = () => {
+    console.log("🔄 Manual refresh triggered");
+    queryClient.removeQueries({ queryKey: ["flexible-bundles"] }); // Remove from cache completely
     queryClient.invalidateQueries({ queryKey: ["flexible-bundles"] });
     refetch();
   };

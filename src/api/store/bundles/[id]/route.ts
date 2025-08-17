@@ -11,7 +11,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     console.log("Bundle ID:", id);
     console.log("Currency:", currency_code, "Region:", region_id);
 
-    // First get bundle with items
+    // First get bundle with items - UPDATED to include all discount fields
     const { data: bundles } = await query.graph({
       entity: "bundle",
       fields: [
@@ -23,8 +23,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "min_items",
         "max_items",
         "selection_type",
-        "discount_2_items",
-        "discount_3_items",
+        // UPDATED: Include all discount fields
+        "discount_type", // NEW: "percentage" or "fixed"
+        "discount_2_items", // Percentage for 2 items
+        "discount_3_items", // Percentage for 3+ items
+        "discount_2_items_amount", // NEW: Fixed amount for 2 items (cents)
+        "discount_3_items_amount", // NEW: Fixed amount for 3+ items (cents)
         "created_at",
         "updated_at",
         "items.*",
@@ -117,6 +121,15 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       bundleWithProducts.items?.length,
       "items"
     );
+
+    // Log the discount configuration for debugging
+    console.log("Bundle discount config:", {
+      discount_type: bundleWithProducts.discount_type,
+      discount_2_items: bundleWithProducts.discount_2_items,
+      discount_3_items: bundleWithProducts.discount_3_items,
+      discount_2_items_amount: bundleWithProducts.discount_2_items_amount,
+      discount_3_items_amount: bundleWithProducts.discount_3_items_amount,
+    });
 
     res.json({
       bundle: bundleWithProducts,

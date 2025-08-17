@@ -24,8 +24,16 @@ export type CreateFlexibleBundleWorkflowInput = {
     min_items?: number;
     max_items?: number;
     selection_type?: "flexible" | "required_all";
-    discount_2_items?: number; // ADDED
-    discount_3_items?: number; // ADDED
+
+    // UPDATED: Support both discount types
+    discount_type?: "fixed" | "percentage";
+    discount_2_items_amount?: number; // Fixed amount in cents (e.g., 2000 = 20RM)
+    discount_3_items_amount?: number; // Fixed amount in cents (e.g., 3000 = 30RM)
+
+    // Backward compatibility
+    discount_2_items?: number; // Percentage
+    discount_3_items?: number; // Percentage
+
     items: {
       product_id: string;
       quantity: number;
@@ -38,7 +46,7 @@ export type CreateFlexibleBundleWorkflowInput = {
 export const createFlexibleBundleWorkflow = createWorkflow(
   "create-flexible-bundle",
   ({ bundle: bundleData }: CreateFlexibleBundleWorkflowInput) => {
-    // Create the bundle with all fields including discounts
+    // Create the bundle with all fields including fixed discounts
     const bundle = createBundleStep({
       title: bundleData.title,
       handle: bundleData.handle ?? "",
@@ -47,8 +55,15 @@ export const createFlexibleBundleWorkflow = createWorkflow(
       min_items: bundleData.min_items ?? 1,
       max_items: bundleData.max_items,
       selection_type: bundleData.selection_type ?? "flexible",
-      discount_2_items: bundleData.discount_2_items, // ADDED
-      discount_3_items: bundleData.discount_3_items, // ADDED
+
+      // NEW: Fixed discount support
+      discount_type: bundleData.discount_type,
+      discount_2_items_amount: bundleData.discount_2_items_amount,
+      discount_3_items_amount: bundleData.discount_3_items_amount,
+
+      // Backward compatibility
+      discount_2_items: bundleData.discount_2_items,
+      discount_3_items: bundleData.discount_3_items,
     });
 
     // Create bundle items
@@ -67,10 +82,10 @@ export const createFlexibleBundleWorkflow = createWorkflow(
         return Array.isArray(data.bundleItems)
           ? data.bundleItems.map((item, index) => ({
               [BUNDLED_PRODUCT_MODULE]: {
-                id: item.id, // ← Correct key
+                id: item.id,
               },
               [Modules.PRODUCT]: {
-                id: data.bundleData.items[index].product_id, // ← Also change to id
+                id: data.bundleData.items[index].product_id,
               },
             }))
           : [];

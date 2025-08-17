@@ -1,4 +1,3 @@
-// src/workflows/steps/create-bundle.ts - FIXED VERSION
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
 import BundledProductModuleService from "../../modules/bundled-product/service";
 import { BUNDLED_PRODUCT_MODULE } from "../../modules/bundled-product";
@@ -11,8 +10,13 @@ type CreateBundleStepInput = {
   min_items?: number;
   max_items?: number;
   selection_type?: string;
+
+  // UPDATED: Include all discount fields
+  discount_type?: string;
   discount_2_items?: number;
   discount_3_items?: number;
+  discount_2_items_amount?: number;
+  discount_3_items_amount?: number;
 };
 
 export const createBundleStep = createStep(
@@ -23,17 +27,21 @@ export const createBundleStep = createStep(
 
     console.log("🔧 Creating bundle with input:", input);
 
-    // FIXED: Ensure title is properly passed and not used as ID
     const bundleData = {
-      title: input.title, // Explicitly set title
+      title: input.title,
       handle: input.handle || input.title.toLowerCase().replace(/\s+/g, "-"),
       description: input.description || undefined,
       is_active: input.is_active ?? true,
       min_items: input.min_items ?? 1,
       max_items: input.max_items || undefined,
       selection_type: input.selection_type ?? "flexible",
+
+      // UPDATED: Include all discount fields
+      discount_type: input.discount_type || "percentage",
       discount_2_items: input.discount_2_items || undefined,
       discount_3_items: input.discount_3_items || undefined,
+      discount_2_items_amount: input.discount_2_items_amount || undefined,
+      discount_3_items_amount: input.discount_3_items_amount || undefined,
     };
 
     console.log("📦 Bundle data to create:", bundleData);
@@ -49,12 +57,9 @@ export const createBundleStep = createStep(
     }
   },
   async (bundleId, { container }) => {
-    if (!bundleId) {
-      return;
-    }
+    if (!bundleId) return;
 
     console.log("🔄 Compensating: deleting bundle", bundleId);
-
     const bundledProductModuleService: BundledProductModuleService =
       container.resolve(BUNDLED_PRODUCT_MODULE);
 

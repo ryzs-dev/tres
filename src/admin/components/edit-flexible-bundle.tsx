@@ -1,4 +1,4 @@
-// src/admin/components/create-flexible-bundle.tsx - MINIMALIST MATCHING EDIT DESIGN
+// src/admin/components/edit-flexible-bundle.tsx
 import {
   Button,
   FocusModal,
@@ -17,10 +17,47 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
 import { HttpTypes } from "@medusajs/framework/types";
-import { Plus, Trash } from "@medusajs/icons";
+import { Plus, Trash, PencilSquare } from "@medusajs/icons";
 
-export const CreateFlexibleBundle = () => {
-  const [open, setOpen] = useState(false);
+type FlexibleBundle = {
+  id: string;
+  title: string;
+  handle?: string;
+  description?: string;
+  is_active: boolean;
+  min_items: number;
+  max_items?: number | null;
+  selection_type: "flexible" | "required_all";
+  discount_type?: "percentage" | "fixed";
+  discount_2_items?: number | null;
+  discount_3_items?: number | null;
+  discount_2_items_amount?: number | null;
+  discount_3_items_amount?: number | null;
+  items?: {
+    id: string;
+    product_id: string;
+    product: {
+      id: string;
+      title: string;
+      status?: string;
+    };
+    quantity: number;
+    is_optional: boolean;
+    sort_order: number;
+  }[];
+};
+
+type EditFlexibleBundleProps = {
+  bundle: FlexibleBundle;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export const EditFlexibleBundle = ({
+  bundle,
+  open,
+  onOpenChange,
+}: EditFlexibleBundleProps) => {
   const [title, setTitle] = useState("");
   const [handle, setHandle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,92 +84,158 @@ export const CreateFlexibleBundle = () => {
 
   const [items, setItems] = useState<
     {
+      id?: string;
       product_id: string | undefined;
       quantity: number;
       is_optional: boolean;
       sort_order: number;
     }[]
-  >([{ product_id: undefined, quantity: 1, is_optional: true, sort_order: 0 }]);
+  >([]);
 
   const queryClient = useQueryClient();
 
-  // Auto-generate handle
-  useEffect(() => {
-    if (title) {
-      const generatedHandle = title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .trim();
-      setHandle(generatedHandle);
-    }
-  }, [title]);
-
   // Load products for selection
   const { data: products } = useQuery({
-    queryKey: ["products-for-create"],
+    queryKey: ["products-for-edit"],
     queryFn: async () => {
       try {
-        console.log("🔍 Loading products...");
         const response = await sdk.client.fetch("/admin/products", {
           method: "GET",
-          query: {
-            limit: "100",
-            fields: "id,title,status",
-          },
+          query: { offset: 0, limit: 100 },
         });
-
-        console.log("📦 Products response:", response);
-        const products =
-          (response as { products?: HttpTypes.AdminProduct[] }).products || [];
-        console.log(`✅ Loaded ${products.length} products`);
-        return products;
+        return (
+          (response as { products?: HttpTypes.AdminProduct[] }).products || []
+        );
       } catch (error) {
-        console.error("❌ Error loading products:", error);
+        console.error("Error loading products:", error);
         return [];
       }
     },
   });
 
-  const { mutateAsync: createBundle, isPending: isCreating } = useMutation({
+  // Initialize form with bundle data
+  useEffect(() => {
+    if (bundle && open) {
+      setTitle(bundle.title || "");
+      setHandle(bundle.handle || "");
+      setDescription(bundle.description || "");
+      setIsActive(bundle.is_active);
+      setMinItems(bundle.min_items || 1);
+      setMaxItems(bundle.max_items || undefined);
+      setSelectionType(bundle.selection_type || "flexible");
+
+      // Initialize discount settings
+      setDiscountType(bundle.discount_type || "percentage");
+      setEnableDiscounts(
+        !!(
+          bundle.discount_2_items ||
+          bundle.discount_3_items ||
+          bundle.discount_2_items_amount ||
+          bundle.discount_3_items_amount
+        )
+      );
+
+      // Percentage discounts
+      setDiscount2Items(bundle.discount_2_items || 10);
+      setDiscount3Items(bundle.discount_3_items || 15);
+
+      // Fixed amount discounts (convert from cents to RM)
+      setDiscount2ItemsAmount(
+        bundle.discount_2_items_amount
+          ? bundle.discount_2_items_amount / 100
+          : 20
+      );
+      setDiscount3ItemsAmount(
+        bundle.discount_3_items_amount
+          ? bundle.discount_3_items_amount / 100
+          : 50
+      );
+
+      // Initialize items
+      if (bundle.items) {
+        setItems(
+          bundle.items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            is_optional: item.is_optional,
+            sort_order: item.sort_order,
+          }))
+        );
+      }
+    }
+  }, [bundle, open]);
+
+  const { mutateAsync: updateBundle, isPending: isUpdating } = useMutation({
     mutationFn: async (bundleData: any) => {
-      console.log("📤 Creating bundle with data:", bundleData);
-      const response = await sdk.client.fetch("/admin/bundled-products", {
-        method: "POST",
-        body: bundleData,
-      });
-      console.log("📥 Create response:", response);
+      const response = await sdk.client.fetch(
+        `/admin/bundled-products/${bundle.id}`,
+        {
+          method: "PUT",
+          body: bundleData,
+        }
+      );
       return response;
     },
     onSuccess: () => {
-      toast.success("Bundle created successfully!");
-      // Invalidate all related queries
+      toast.success("Bundle updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["flexible-bundles"] });
       queryClient.invalidateQueries({ queryKey: ["bundled-products"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-bundles"] });
-      // Force refetch
-      queryClient.refetchQueries({ queryKey: ["flexible-bundles"] });
-      setOpen(false);
-      resetForm();
+      onOpenChange(false);
     },
     onError: (error) => {
-      console.error("Error creating bundle:", error);
-      toast.error("Failed to create bundle");
+      console.error("Error updating bundle:", error);
+      toast.error("Failed to update bundle");
     },
   });
 
-  const handleCreate = async () => {
-    // Build bundle data with only defined fields
-    const bundleData: any = {
-      title,
-      handle,
-      description,
+  const handleUpdate = async () => {
+    console.log("🎯 Frontend Values Before Processing:");
+    console.log("  title:", title === "" ? "EMPTY_STRING" : `'${title}'`);
+    console.log("  handle:", handle === "" ? "EMPTY_STRING" : `'${handle}'`);
+    console.log(
+      "  description:",
+      description === "" ? "EMPTY_STRING" : `'${description}'`
+    );
+    console.log("  enableDiscounts:", enableDiscounts);
+    console.log("  discountType:", discountType);
+
+    const bundleData = {
+      title: title, // Don't filter empty strings here
+      handle: handle, // Don't filter empty strings here
+      description: description, // Don't filter empty strings here
       is_active: isActive,
       min_items: minItems,
+      max_items: maxItems,
       selection_type: selectionType,
+
+      // Discount configuration
+      discount_type: enableDiscounts ? discountType : "percentage",
+
+      // Percentage discounts (only if percentage type and enabled)
+      discount_2_items:
+        enableDiscounts && discountType === "percentage"
+          ? discount2Items
+          : null,
+      discount_3_items:
+        enableDiscounts && discountType === "percentage"
+          ? discount3Items
+          : null,
+
+      // Fixed amount discounts (only if fixed type and enabled) - convert RM to cents
+      discount_2_items_amount:
+        enableDiscounts && discountType === "fixed"
+          ? Math.round(discount2ItemsAmount * 100)
+          : null,
+      discount_3_items_amount:
+        enableDiscounts && discountType === "fixed"
+          ? Math.round(discount3ItemsAmount * 100)
+          : null,
+
       items: items
         .filter((item) => item.product_id)
         .map((item, index) => ({
+          id: item.id,
           product_id: item.product_id!,
           quantity: item.quantity,
           is_optional: item.is_optional,
@@ -140,59 +243,34 @@ export const CreateFlexibleBundle = () => {
         })),
     };
 
-    // Only add max_items if it has a value
-    if (maxItems && maxItems > 0) {
-      bundleData.max_items = maxItems;
-    }
+    console.log("📦 Final bundleData being sent:");
+    console.log(
+      "  title:",
+      bundleData.title === "" ? "EMPTY_STRING" : `'${bundleData.title}'`
+    );
+    console.log(
+      "  handle:",
+      bundleData.handle === "" ? "EMPTY_STRING" : `'${bundleData.handle}'`
+    );
+    console.log(
+      "  description:",
+      bundleData.description === ""
+        ? "EMPTY_STRING"
+        : `'${bundleData.description}'`
+    );
+    console.log("  discount_type:", bundleData.discount_type);
+    console.log(
+      "  discount_2_items_amount (cents):",
+      bundleData.discount_2_items_amount
+    );
+    console.log(
+      "  discount_3_items_amount (cents):",
+      bundleData.discount_3_items_amount
+    );
 
-    // Only add discount fields if discounts are enabled
-    if (enableDiscounts) {
-      bundleData.discount_type = discountType;
+    console.log("📦 Complete bundleData:", JSON.stringify(bundleData, null, 2));
 
-      if (discountType === "percentage") {
-        // Only add percentage discounts if they have values > 0
-        if (discount2Items && discount2Items > 0) {
-          bundleData.discount_2_items = discount2Items;
-        }
-        if (discount3Items && discount3Items > 0) {
-          bundleData.discount_3_items = discount3Items;
-        }
-      } else if (discountType === "fixed") {
-        // Only add fixed amount discounts if they have values > 0
-        if (discount2ItemsAmount && discount2ItemsAmount > 0) {
-          bundleData.discount_2_items_amount = Math.round(
-            discount2ItemsAmount * 100
-          );
-        }
-        if (discount3ItemsAmount && discount3ItemsAmount > 0) {
-          bundleData.discount_3_items_amount = Math.round(
-            discount3ItemsAmount * 100
-          );
-        }
-      }
-    }
-
-    console.log("📤 Sending bundle data:", bundleData);
-    await createBundle(bundleData);
-  };
-
-  const resetForm = () => {
-    setTitle("");
-    setHandle("");
-    setDescription("");
-    setIsActive(true);
-    setMinItems(1);
-    setMaxItems(undefined);
-    setSelectionType("flexible");
-    setEnableDiscounts(true);
-    setDiscountType("percentage");
-    setDiscount2Items(10);
-    setDiscount3Items(15);
-    setDiscount2ItemsAmount(20);
-    setDiscount3ItemsAmount(50);
-    setItems([
-      { product_id: undefined, quantity: 1, is_optional: true, sort_order: 0 },
-    ]);
+    await updateBundle(bundleData);
   };
 
   const addItem = () => {
@@ -239,18 +317,12 @@ export const CreateFlexibleBundle = () => {
   const discountPreview = getDiscountPreview();
 
   return (
-    <FocusModal open={open} onOpenChange={setOpen}>
-      <FocusModal.Trigger asChild>
-        <Button variant="primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Bundle
-        </Button>
-      </FocusModal.Trigger>
-
+    <FocusModal open={open} onOpenChange={onOpenChange}>
       <FocusModal.Content className="overflow-hidden max-w-4xl">
         <FocusModal.Header>
           <div className="flex items-center gap-3">
-            <Heading level="h1">Create Bundle</Heading>
+            <PencilSquare className="w-5 h-5" />
+            <Heading level="h1">Edit Bundle: {bundle.title}</Heading>
           </div>
         </FocusModal.Header>
 
@@ -556,7 +628,7 @@ export const CreateFlexibleBundle = () => {
 
             <div className="space-y-4">
               {items.map((item, index) => (
-                <CreateBundleItem
+                <EditBundleItem
                   key={index}
                   item={item}
                   index={index}
@@ -596,18 +668,18 @@ export const CreateFlexibleBundle = () => {
               )}
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="secondary" onClick={() => setOpen(false)}>
+              <Button variant="secondary" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                onClick={handleCreate}
-                isLoading={isCreating}
+                onClick={handleUpdate}
+                isLoading={isUpdating}
                 disabled={
                   !title.trim() || items.every((item) => !item.product_id)
                 }
               >
-                Create Bundle
+                Update Bundle
               </Button>
             </div>
           </div>
@@ -617,9 +689,10 @@ export const CreateFlexibleBundle = () => {
   );
 };
 
-// Create Bundle Item Component - matching Edit design
-type CreateBundleItemProps = {
+// Edit Bundle Item Component
+type EditBundleItemProps = {
   item: {
+    id?: string;
     product_id: string | undefined;
     quantity: number;
     is_optional: boolean;
@@ -632,14 +705,14 @@ type CreateBundleItemProps = {
   canRemove: boolean;
 };
 
-const CreateBundleItem = ({
+const EditBundleItem = ({
   item,
   index,
   onUpdate,
   onRemove,
   products,
   canRemove,
-}: CreateBundleItemProps) => {
+}: EditBundleItemProps) => {
   const selectedProduct = products?.find((p) => p.id === item.product_id);
 
   return (

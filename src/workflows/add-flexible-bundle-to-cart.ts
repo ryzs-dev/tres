@@ -1,4 +1,4 @@
-// src/workflows/add-flexible-bundle-to-cart.ts - FIXED WORKING VERSION
+// src/workflows/add-flexible-bundle-to-cart.ts - UPDATED WITH FIXED DISCOUNT FIELDS
 import {
   createWorkflow,
   WorkflowResponse,
@@ -7,9 +7,7 @@ import {
   addToCartWorkflow,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows";
-import {
-  prepareFlexibleBundleCartDataStep,
-} from "./steps/prepare-bundle-cart-data";
+import { prepareFlexibleBundleCartDataStep } from "./steps/prepare-bundle-cart-data";
 
 type AddFlexibleBundleToCartWorkflowInput = {
   cart_id: string;
@@ -27,6 +25,7 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
     const { cart_id, bundle_id, selectedItems } = input;
 
     // Get cart data
+    // @ts-ignore
     const cartQuery = useQueryGraphStep({
       entity: "cart",
       fields: ["id", "region_id", "currency_code", "region.*"],
@@ -38,7 +37,7 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
       },
     }).config({ name: "get-cart-for-bundle" });
 
-    // Get bundle configuration
+    // UPDATED: Get bundle configuration WITH fixed discount fields
     //@ts-ignore
     const bundleQuery = useQueryGraphStep({
       entity: "bundle",
@@ -49,8 +48,14 @@ export const addFlexibleBundleToCartWorkflow = createWorkflow(
         "max_items",
         "selection_type",
         "is_active",
+        // Percentage discounts (legacy)
         "discount_2_items",
         "discount_3_items",
+        // ADDED: Fixed discount fields
+        "discount_type",
+        "discount_2_items_amount",
+        "discount_3_items_amount",
+        // Bundle items
         "items.*",
         "items.product.*",
         "items.product.variants.*",

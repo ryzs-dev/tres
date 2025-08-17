@@ -23,15 +23,159 @@ type NewUserEmailProps = {
 
 export function NewUserEmail({
   user,
-  promoCode = "FIRSTORDER",
-  imageUrl = "https://storage.tres.my/Hero_Image/DSCF2829.jpg",
+  promoCode = "TRES10",
+  imageUrl = "https://storage.tres.my/first_buyer_2.JPG",
 }: NewUserEmailProps) {
   return (
     <Html>
-      <Head />
-      <Preview>Welcome to Tres! Get 10% off your first order 🎉</Preview>
+      <Head>
+        <style>{`
+            @font-face {
+              font-family: 'URW DIN';
+              src: url('/font/URWDIN-Regular.eot');
+              src: local('URW DIN Regular'), local('URWDIN-Regular'),
+                  url('/font/URWDIN-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('/font/URWDIN-Regular.woff2') format('woff2'),
+                  url('/font/URWDIN-Regular.woff') format('woff'),
+                  url('/font/URWDIN-Regular.ttf') format('truetype');
+              font-weight: normal;
+              font-style: normal;
+            }
+            
+            @font-face {
+              font-family: 'URW DIN';
+              src: url('/font/URWDIN-Medium.eot');
+              src: local('URW DIN Medium'), local('URWDIN-Medium'),
+                  url('/font/URWDIN-Medium.eot?#iefix') format('embedded-opentype'),
+                  url('/font/URWDIN-Medium.woff2') format('woff2'),
+                  url('/font/URWDIN-Medium.woff') format('woff'),
+                  url('/font/URWDIN-Medium.ttf') format('truetype');
+              font-weight: 500;
+              font-style: normal;
+            }
+            
+            @font-face {
+              font-family: 'URW DIN';
+              src: url('/font/URWDIN-Bold.eot');
+              src: local('URW DIN Bold'), local('URWDIN-Bold'),
+                  url('/font/URWDIN-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('/font/URWDIN-Bold.woff2') format('woff2'),
+                  url('/font/URWDIN-Bold.woff') format('woff'),
+                  url('/font/URWDIN-Bold.ttf') format('truetype');
+              font-weight: bold;
+              font-style: normal;
+            }
+            
+            @font-face {
+              font-family: 'URW DIN';
+              src: url('/font/URWDIN-Light.eot');
+              src: local('URW DIN Light'), local('URWDIN-Light'),
+                  url('/font/URWDIN-Light.eot?#iefix') format('embedded-opentype'),
+                  url('/font/URWDIN-Light.woff2') format('woff2'),
+                  url('/font/URWDIN-Light.woff') format('woff'),
+                  url('/font/URWDIN-Light.ttf') format('truetype');
+              font-weight: 300;
+              font-style: normal;
+            }
+            
+            @font-face {
+              font-family: 'URW DIN';
+              src: url('/font/URWDIN-Black.eot');
+              src: local('URW DIN Black'), local('URWDIN-Black'),
+                  url('/font/URWDIN-Black.eot?#iefix') format('embedded-opentype'),
+                  url('/font/URWDIN-Black.woff2') format('woff2'),
+                  url('/font/URWDIN-Black.woff') format('woff'),
+                  url('/font/URWDIN-Black.ttf') format('truetype');
+              font-weight: 900;
+              font-style: normal;
+            }
+            
+            * {
+              font-family: 'URW DIN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif !important;
+            }
+            
+            @media only screen and (max-width: 600px) {
+              .mobile-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+              }
+              .mobile-content {
+                padding: 24px 20px 20px !important;
+              }
+              .mobile-heading {
+                font-size: 24px !important;
+                line-height: 1.3 !important;
+                margin: 0 0 16px !important;
+              }
+              .mobile-welcome {
+                font-size: 16px !important;
+                margin: 0 0 20px !important;
+              }
+              .mobile-text {
+                font-size: 14px !important;
+                margin: 12px 0 !important;
+              }
+              .mobile-promo {
+                padding: 12px 16px !important;
+                margin: 16px 0 !important;
+                border-radius: 10px !important;
+                display: inline-block !important;
+              }
+              .mobile-promo-code {
+                font-size: 18px !important;
+                letter-spacing: 1.5px !important;
+              }
+              .mobile-button-section {
+                margin: 24px 0 20px !important;
+              }
+              .mobile-button {
+                padding: 14px 32px !important;
+                font-size: 14px !important;
+                border-radius: 10px !important;
+              }
+              .mobile-image {
+                height: 200px !important;
+              }
+            }
+            
+            @media only screen and (max-width: 480px) {
+              .mobile-container {
+                margin: 0 8px !important;
+                border-radius: 8px !important;
+              }
+              .mobile-content {
+                padding: 20px 16px 16px !important;
+              }
+              .mobile-heading {
+                font-size: 22px !important;
+              }
+              .mobile-welcome {
+                font-size: 15px !important;
+              }
+              .mobile-promo {
+                padding: 10px 14px !important;
+                margin: 14px 0 !important;
+                border-radius: 8px !important;
+                display: inline-block !important;
+              }
+              .mobile-promo-code {
+                font-size: 16px !important;
+                letter-spacing: 1px !important;
+              }
+              .mobile-button {
+                padding: 12px 24px !important;
+                font-size: 13px !important;
+              }
+              .mobile-image {
+                height: 180px !important;
+              }
+            }
+          `}</style>
+      </Head>
+      <Preview>Thank you for signing up!</Preview>
       <Body style={main}>
-        <Container style={container}>
+        <Container style={container} className="mobile-container">
           {/* Header Image */}
           <Section style={imageSection}>
             <Img
@@ -40,69 +184,49 @@ export function NewUserEmail({
               width="100%"
               height="250"
               style={image}
+              className="mobile-image"
             />
+            <div style={overlay}></div>
           </Section>
 
           {/* Welcome Heading */}
-          <Section style={content}>
-            <Heading style={heading}>
-              Welcome to Tres, {user.first_name || "Friend"}! 👋
+          <Section style={content} className="mobile-content">
+            <Heading style={heading} className="mobile-heading">
+              Thank you for signing up!
             </Heading>
 
             {/* Welcome Message */}
-            <Text style={welcomeText}>
-              We're absolutely thrilled to have you join our community! You've
-              just taken the first step into an amazing shopping experience
-              where quality meets convenience.
+            <Text style={welcomeText} className="mobile-welcome">
+              Welcome to the TRES community — where style meets strength.
             </Text>
 
-            <Text style={text}>
-              As a special welcome gift, we'd like to offer you an exclusive
-              discount on your first purchase:
+            <Text style={text} className="mobile-text">
+              As a first-time buyer, enjoy <strong style={bold}>10% OFF</strong>{" "}
+              your first purchase with us.
             </Text>
 
-            {/* Promo Code Section */}
-            <Section style={promoSection}>
-              <Text style={promoTitle}>Your Exclusive Promo Code:</Text>
-              <Text style={promoCodeText}>{promoCode}</Text>
-              <Text style={promoDescription}>
-                Use this code at checkout to get <strong>10% off</strong> your
-                first order!
+            {/* Promo Code Highlight */}
+            <Section style={promoContainer}>
+              <Text style={promoLabel}>Enter code:</Text>
+              <Text style={promoCodeText} className="mobile-promo-code">
+                {promoCode}
               </Text>
             </Section>
 
+            <Text style={text} className="mobile-text">
+              Now go ahead, find your fit.
+            </Text>
+
             {/* Call to Action Button */}
-            <Section style={buttonSection}>
-              <Button style={button} href="https://tres.my/my/bundles">
-                Start Shopping Now
+            <Section style={buttonSection} className="mobile-button-section">
+              <Button
+                style={button}
+                className="mobile-button"
+                href="https://tres.my/my/bundles"
+              >
+                Shop Now
               </Button>
             </Section>
-
-            <Hr style={hr} />
-
-            {/* Additional Information */}
-            <Text style={text}>
-              Here's what you can expect as a Tres member:
-            </Text>
-            <Text style={benefitsList}>
-              • Exclusive access to new products and sales
-              <br />
-              • Fast and reliable shipping
-              <br />
-              • 24/7 customer support
-              <br />• Easy returns and exchanges
-            </Text>
-
-            <Text style={text}>
-              If you have any questions or need assistance, don't hesitate to
-              reach out to our support team. We're here to help!
-            </Text>
-
-            <Text style={signature}>
-              Happy shopping!
-              <br />
-              Tres
-            </Text>
           </Section>
         </Container>
       </Body>
@@ -112,130 +236,206 @@ export function NewUserEmail({
 
 // Styles
 const main = {
-  backgroundColor: "#f6f9fc",
+  backgroundColor: "#f8fafc",
   fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+    '"URW DIN", -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  width: "100%",
+  margin: "0",
+  padding: "0",
 };
 
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
-  padding: "20px 0 48px",
+  padding: "0",
   marginBottom: "64px",
   maxWidth: "600px",
+  borderRadius: "12px",
+  overflow: "hidden",
+  boxShadow:
+    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+  width: "100%",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const imageSection = {
   padding: "0",
+  position: "relative" as const,
+  width: "100%",
 };
 
 const image = {
-  borderRadius: "8px 8px 0 0",
+  borderRadius: "0",
   objectFit: "cover" as const,
-  objectPosition: "50% 28%", // can be 'top', 'center', 'bottom', 'left', 'right' or percentages like '50% 20%'
+  objectPosition: "50% 28%",
+  display: "block",
+  width: "100%",
+  maxWidth: "100%",
+};
+
+const overlay = {
+  position: "absolute" as const,
+  top: "0",
+  left: "0",
+  right: "0",
+  bottom: "0",
+  background:
+    "linear-gradient(135deg, rgba(153, 178, 221, 0.08) 0%, rgba(153, 178, 221, 0.03) 100%)",
 };
 
 const content = {
-  padding: "0 48px",
+  padding: "48px 48px 32px",
+  width: "100%",
+  boxSizing: "border-box" as const,
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const heading = {
   fontSize: "32px",
-  lineHeight: "1.3",
-  fontWeight: "700",
-  color: "#484848",
+  lineHeight: "1.2",
+  fontWeight: "800",
+  color: "#1f2937",
   textAlign: "center" as const,
-  margin: "32px 0 24px",
+  margin: "0 0 24px",
+  letterSpacing: "-0.025em",
+  width: "100%",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const welcomeText = {
-  fontSize: "18px",
+  fontSize: "20px",
   lineHeight: "1.4",
-  color: "#484848",
+  color: "#4b5563",
   textAlign: "center" as const,
-  margin: "0 0 24px",
+  margin: "0 0 32px",
+  fontWeight: "500",
+  width: "100%",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const text = {
   fontSize: "16px",
-  lineHeight: "1.4",
-  color: "#484848",
+  lineHeight: "1.6",
+  color: "#374151",
   margin: "16px 0",
+  textAlign: "center" as const,
+  width: "100%",
+  fontFamily: '"URW DIN", sans-serif',
+};
+
+const bold = {
+  color: "#99B2DD",
+  fontWeight: "700",
+  fontFamily: '"URW DIN", sans-serif',
+};
+
+const promoContainer = {
+  textAlign: "center" as const,
+  width: "100%",
+  margin: "24px 0",
 };
 
 const promoSection = {
-  backgroundColor: "#f8f9fa",
-  borderRadius: "8px",
-  padding: "24px",
-  margin: "32px 0",
+  backgroundColor: "linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%)",
+  borderRadius: "12px",
+  padding: "16px 20px",
   textAlign: "center" as const,
-  border: "2px dashed #6366f1",
+  border: "2px solid #e0e7ff",
+  position: "relative" as const,
+  background: "linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%)",
+  width: "auto",
+  display: "inline-block",
+  boxSizing: "border-box" as const,
+  margin: "0",
 };
 
 const promoTitle = {
-  fontSize: "18px",
+  fontSize: "14px",
   fontWeight: "600",
-  color: "#484848",
-  margin: "0 0 12px",
+  color: "#6b7280",
+  margin: "0 0 8px",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.05em",
+};
+
+const promoLabel = {
+  fontSize: "14px",
+  fontWeight: "500",
+  color: "#6b7280",
+  margin: "0 0 4px",
+  display: "block",
 };
 
 const promoCodeText = {
-  fontSize: "32px",
-  fontWeight: "bold",
-  color: "#6366f1",
+  fontSize: "20px",
+  fontWeight: "800",
+  color: "#99B2DD",
   letterSpacing: "2px",
-  margin: "8px 0 16px",
+  margin: "0",
   fontFamily: "monospace",
+  textShadow: "0 2px 4px rgba(99, 102, 241, 0.1)",
 };
 
 const promoDescription = {
   fontSize: "16px",
-  color: "#484848",
+  color: "#6b7280",
   margin: "0",
+  fontWeight: "500",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const buttonSection = {
   textAlign: "center" as const,
-  margin: "32px 0 24px",
+  margin: "40px 0 32px",
+  width: "100%",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const button = {
-  backgroundColor: "#6366f1",
+  backgroundColor: "#99B2DD",
   borderRadius: "8px",
-  color: "#fff",
+  color: "#ffffff",
   fontSize: "16px",
-  fontWeight: "bold",
+  fontWeight: "600",
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  padding: "16px 32px",
+  padding: "14px 40px",
   cursor: "pointer",
+  border: "none",
+  letterSpacing: "0.5px",
+  minWidth: "120px",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const hr = {
-  borderColor: "#e6ebf1",
+  borderColor: "#e5e7eb",
   margin: "32px 0",
 };
 
 const benefitsList = {
   fontSize: "16px",
   lineHeight: "1.6",
-  color: "#484848",
+  color: "#374151",
   margin: "16px 0",
   paddingLeft: "16px",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
 const signature = {
   fontSize: "16px",
   lineHeight: "1.4",
-  color: "#484848",
+  color: "#6b7280",
   textAlign: "center" as const,
   margin: "32px 0 16px",
   fontStyle: "italic",
+  fontFamily: '"URW DIN", sans-serif',
 };
 
-// // @ts-ignore
+// @ts-ignore
 // npm run dev:email
-// export default () => (
-//   <NewUserEmail user={{ first_name: "John", email: "john@example.com" }} />
-// );
+export default () => (
+  <NewUserEmail
+    user={{ first_name: "Joanna", email: "traumfrau283@gmail.com" }}
+  />
+);

@@ -1,3 +1,4 @@
+// src/api/admin/bundled-products/route.ts - FIXED POST SCHEMA
 import {
   AuthenticatedMedusaRequest,
   MedusaResponse,
@@ -8,20 +9,30 @@ import {
   CreateFlexibleBundleWorkflowInput,
 } from "../../../workflows/create-flexible-bundle";
 
+// FIXED: Use nullable() to allow null values for discount fields
 export const PostFlexibleBundleSchema = z.object({
   title: z.string(),
   handle: z.string(),
   description: z.string().optional(),
   is_active: z.boolean().optional().default(true),
   min_items: z.number().optional().default(1),
-  max_items: z.number().optional(),
+  max_items: z.number().nullable().optional(),
   selection_type: z
     .enum(["flexible", "required_all"])
     .optional()
     .default("flexible"),
-  // Add discount fields
-  discount_2_items: z.number().min(0).max(100).optional(),
-  discount_3_items: z.number().min(0).max(100).optional(),
+
+  // FIXED: Use nullable() to properly handle null values
+  discount_type: z
+    .enum(["percentage", "fixed"])
+    .nullable()
+    .optional()
+    .default("percentage"),
+  discount_2_items: z.number().min(0).max(100).nullable().optional(),
+  discount_3_items: z.number().min(0).max(100).nullable().optional(),
+  discount_2_items_amount: z.number().min(0).nullable().optional(),
+  discount_3_items_amount: z.number().min(0).nullable().optional(),
+
   items: z
     .array(
       z.object({
@@ -41,6 +52,8 @@ export async function POST(
   res: MedusaResponse
 ) {
   try {
+    console.log("📥 Received bundle data:", req.validatedBody);
+
     const { result: flexibleBundle } = await createFlexibleBundleWorkflow(
       req.scope
     ).run({
@@ -72,7 +85,6 @@ export async function GET(
     console.log("🔍 GET /admin/bundled-products called");
     console.log("📋 Query params:", req.query);
 
-    // FIXED: More explicit query with all needed fields
     const { data: bundles, metadata } = await query.graph({
       entity: "bundle",
       fields: [
@@ -84,39 +96,89 @@ export async function GET(
         "min_items",
         "max_items",
         "selection_type",
-        "discount_2_items", // Make sure these are included
-        "discount_3_items", // Make sure these are included
+        "discount_type",
+        "discount_2_items",
+        "discount_3_items",
+        "discount_2_items_amount",
+        "discount_3_items_amount",
         "created_at",
         "updated_at",
         "items.*",
-        "items.product.*",
-        "items.product.title",
+        "items.product_id",
         "items.quantity",
         "items.is_optional",
         "items.sort_order",
       ],
-      filters: {
-        // Optionally filter by active status or remove to show all
-        // is_active: true,
-      },
       pagination: {
         take: parseInt(req.query.limit as string) || 15,
         skip: parseInt(req.query.offset as string) || 0,
       },
     });
 
-    console.log(`📊 Found ${bundles?.length || 0} bundles`);
-    console.log("🎯 Sample bundle:", bundles?.[0]);
+    // Fetch product information for each bundle item
+    const bundlesWithProducts = await Promise.all(
+      (bundles || []).map(async (bundle) => {
+        if (!bundle.items || bundle.items.length === 0) {
+          return { ...bundle, items: [] };
+        }
 
-    // FIXED: Make sure response format matches what frontend expects
+        const itemsWithProducts = await Promise.all(
+          bundle.items.map(async (item) => {
+            if (!item?.product_id) return item;
+
+            try {
+              const { data: products } = await query.graph({
+                entity: "product",
+                fields: ["id", "title", "status"],
+                filters: { id: item.product_id },
+              });
+
+              return {
+                ...item,
+                product: products?.[0] || {
+                  id: item?.product_id,
+                  title: "Unknown Product",
+                  status: "draft",
+                },
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching product ${item?.product_id}:`,
+                error
+              );
+              return {
+                ...item,
+                product: {
+                  id: item?.product_id,
+                  title: "Unknown Product",
+                  status: "draft",
+                },
+              };
+            }
+          })
+        );
+
+        return { ...bundle, items: itemsWithProducts };
+      })
+    );
+
+    console.log(
+      `📊 Query returned ${bundlesWithProducts?.length || 0} bundles`
+    );
+
     const response = {
-      flexible_bundles: bundles || [], // Use "flexible_bundles" key to match frontend
-      count: metadata?.count || bundles?.length || 0,
+      flexible_bundles: bundlesWithProducts || [],
+      count: metadata?.count || bundlesWithProducts?.length || 0,
       limit: parseInt(req.query.limit as string) || 15,
       offset: parseInt(req.query.offset as string) || 0,
     };
 
-    console.log("📤 Sending response:", response);
+    console.log("📤 Sending response structure:", {
+      flexible_bundles_count: response.flexible_bundles.length,
+      total_count: response.count,
+      limit: response.limit,
+      offset: response.offset,
+    });
 
     res.json(response);
   } catch (error) {
