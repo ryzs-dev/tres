@@ -37,6 +37,15 @@ module.exports = defineConfig({
               automatic_payment_methods: true,
             },
           },
+          {
+            resolve: "./src/modules/razorpay-payment",
+            id: "razorpay",
+            options: {
+              apiKey: process.env.RAZORPAY_KEY_ID,
+              apiSecret: process.env.RAZORPAY_KEY_SECRET,
+              webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
+            },
+          },
         ],
       },
     },
