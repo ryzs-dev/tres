@@ -23,12 +23,7 @@ export const prepareFlexibleBundleCartDataStep = createStep(
       selectedItems.length,
       "items"
     );
-    console.log(
-      "💰 Cart currency:",
-      cart.currency_code,
-      "Region:",
-      cart.region_id
-    );
+    console.log("💰 Cart currency:", cart.currency_code);
     console.log("🎯 Bundle discount configuration:", {
       discount_type: bundle.discount_type,
       discount_2_items: bundle.discount_2_items,
@@ -110,8 +105,10 @@ export const prepareFlexibleBundleCartDataStep = createStep(
 
       const quantity = selectedItem.quantity || bundleItem.quantity || 1;
 
+      console.log(bundleItem);
+      console.log(selectedItem);
       console.log(
-        `➕ Adding: ${bundleItem.product?.title || "Unknown Product"}, variant: ${selectedItem.variant_id}, qty: ${quantity}`
+        `➕ Adding: ${bundleItem.product_title || "Unknown Product"}, variant: ${selectedItem.variant_id}, qty: ${quantity}`
       );
 
       // Enhanced metadata with fixed discount support
