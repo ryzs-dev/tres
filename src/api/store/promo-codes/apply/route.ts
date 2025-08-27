@@ -5,6 +5,7 @@ import {
 } from "@medusajs/medusa/core-flows";
 import { PromotionActions } from "@medusajs/framework/utils";
 import { PROMO_CODE_MODULE } from "../../../../modules/promo-code";
+import PromoCodeService from "../../../../modules/promo-code/service";
 
 export async function POST(
   req: MedusaRequest,
@@ -29,7 +30,10 @@ export async function POST(
 
   try {
     // Validate the code first
-    const promoCodeService = req.scope.resolve(PROMO_CODE_MODULE);
+    // @ts-ignore
+    const promoCodeService = req.scope.resolve(
+      PROMO_CODE_MODULE
+    ) as PromoCodeService;
     const promoCode = await promoCodeService.validateCode(code, customer_email);
 
     // Create the promotion

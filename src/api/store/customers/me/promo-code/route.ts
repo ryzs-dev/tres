@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework";
 import { PROMO_CODE_MODULE } from "../../../../../modules/promo-code";
+import PromoCodeService from "../../../../../modules/promo-code/service";
 
 export async function GET(
   req: MedusaRequest,
@@ -15,7 +16,9 @@ export async function GET(
   }
 
   try {
-    const promoCodeService = req.scope.resolve(PROMO_CODE_MODULE);
+    const promoCodeService = req.scope.resolve(
+      PROMO_CODE_MODULE
+    ) as PromoCodeService;
     const promoCode = await promoCodeService.getCustomerCode(customerId);
 
     if (!promoCode) {
