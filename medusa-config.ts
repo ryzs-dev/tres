@@ -111,5 +111,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/bundled-product",
     },
+    {
+      resolve: "./src/modules/promo-code",
+    },
   ],
 });
