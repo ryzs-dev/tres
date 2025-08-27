@@ -5,7 +5,7 @@ import { SubscriberArgs, type SubscriberConfig } from "@medusajs/medusa";
 import PromoCodeService from "../modules/promo-code/service";
 
 // Live group ID for "New Buyer" group
-const NEW_BUYER_GROUP_ID = "cusgroup_01JWQ5RN74XM9N0KHNPQT5JMRS";
+const NEW_BUYER_GROUP_ID = "cusgroup_01K1YP55FBB08FNASANG9ZTQQZ";
 
 export default async function handleCustomerCreated({
   event,
