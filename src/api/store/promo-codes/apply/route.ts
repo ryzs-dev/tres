@@ -44,7 +44,7 @@ export async function POST(
             code: code,
             type: "standard",
             status: "active",
-            is_automatic: true,
+            is_automatic: false,
             application_method: {
               type: "percentage",
               target_type: "items",
