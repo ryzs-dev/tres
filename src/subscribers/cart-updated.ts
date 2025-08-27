@@ -1,5 +1,4 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { Cart } from "../../.medusa/types/query-entry-points";
 
 export default async function cartUpdatedHandler({
   event,
@@ -41,7 +40,7 @@ export default async function cartUpdatedHandler({
     const bundleGroups = new Map<string, any[]>();
     const nonBundleItems: any[] = [];
 
-    allCartItems.forEach((item: Cart) => {
+    allCartItems.forEach((item) => {
       const metadata = item.metadata as {
         is_from_bundle?: boolean;
         bundle_id?: string;
