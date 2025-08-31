@@ -216,5 +216,10 @@ export default defineMiddlewares({
       methods: ["DELETE"],
       middlewares: [],
     },
+    {
+      matcher: "/api/hooks/payment/razorpay/*",
+      bodyParser: { preserveRawBody: true },
+      method: ["POST"],
+    },
   ],
 });

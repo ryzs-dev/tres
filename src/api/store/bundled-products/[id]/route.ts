@@ -30,6 +30,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "items.product.options.*",
         "items.product.options.values.*",
         "items.product.variants.*",
+        "items.product.vairants.inventory_quantity",
         "items.product.variants.calculated_price.*",
         "items.product.variants.options.*",
       ],
