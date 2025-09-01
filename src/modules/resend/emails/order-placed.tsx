@@ -93,7 +93,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
               <Row key={item.id} style={{ marginBottom: "12px" }}>
                 <Column style={{ width: "80px" }}>
                   <Img
-                    src={item.thumbnail || "https://via.placeholder.com/80"}
+                    src={item.thumbnail || "/images/placeholder.png"}
                     alt={item.product_title || "Product image"}
                     width="80"
                     height="auto"
