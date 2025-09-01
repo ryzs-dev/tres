@@ -33,6 +33,10 @@ export const prepareFlexibleBundleCartDataStep = createStep(
     });
 
     // Enhanced function to get discount info (supports both fixed and percentage)
+    const totalItems = selectedItems.reduce(
+      (sum, item) => sum + (item.quantity || 1),
+      0
+    );
     const getDiscountInfo = (itemCount: number, bundle: any) => {
       console.log(`🔍 Getting discount for ${itemCount} items`);
 
@@ -92,7 +96,7 @@ export const prepareFlexibleBundleCartDataStep = createStep(
       };
     };
 
-    const discountInfo = getDiscountInfo(selectedItems.length, bundle);
+    const discountInfo = getDiscountInfo(totalItems, bundle);
 
     // Map selected items to cart items with enhanced metadata
     const cartItems = selectedItems.map((selectedItem) => {
@@ -134,7 +138,7 @@ export const prepareFlexibleBundleCartDataStep = createStep(
 
         // Debug info
         created_at: new Date().toISOString(),
-        items_in_bundle: selectedItems.length,
+        items_in_bundle: totalItems,
       };
 
       console.log(`📝 Item metadata:`, metadata);

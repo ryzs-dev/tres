@@ -190,16 +190,6 @@ export const EditFlexibleBundle = ({
   });
 
   const handleUpdate = async () => {
-    console.log("🎯 Frontend Values Before Processing:");
-    console.log("  title:", title === "" ? "EMPTY_STRING" : `'${title}'`);
-    console.log("  handle:", handle === "" ? "EMPTY_STRING" : `'${handle}'`);
-    console.log(
-      "  description:",
-      description === "" ? "EMPTY_STRING" : `'${description}'`
-    );
-    console.log("  enableDiscounts:", enableDiscounts);
-    console.log("  discountType:", discountType);
-
     const bundleData = {
       title: title, // Don't filter empty strings here
       handle: handle, // Don't filter empty strings here

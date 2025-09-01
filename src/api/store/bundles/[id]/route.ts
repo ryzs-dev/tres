@@ -68,7 +68,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
               "variants.*",
               "variants.prices.*",
               "variants.options.*", // Get basic prices instead of calculated_price
-              "variants.inventory_quantity",
+              "variants.inventory_items.*",
+              "variants.inventory_items.inventory.*",
+              "variants.inventory_items.inventory.location_levels.*",
+              "variants.inventory_items.inventory.location_levels.available_quantity",
+              "variants.inventory_items.inventory.location_levels.stocked_quantity",
+              "variants.inventory_items.inventory.location_levels.reserved_quantity",
             ],
             filters: { id: item.product_id },
           });

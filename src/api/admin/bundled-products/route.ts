@@ -108,6 +108,7 @@ export async function GET(
         "items.quantity",
         "items.is_optional",
         "items.sort_order",
+        "items.product.variants.*",
       ],
       pagination: {
         take: parseInt(req.query.limit as string) || 15,
