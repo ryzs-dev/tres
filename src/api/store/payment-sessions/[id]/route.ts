@@ -14,7 +14,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   try {
     const { id } = req.params;
-    const { data } = req.body;
+    const { data } = req.body as { data: Record<string, any> };
 
     if (!id) {
       throw new MedusaError(
@@ -56,15 +56,15 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
     // Try updating with the correct method signature
     try {
-      const updatedSession = await paymentModuleService.updatePaymentSession(
-        id,
-        {
-          data: {
-            ...currentSession.data,
-            ...data,
-          },
-        }
-      );
+      const updatedSession = await paymentModuleService.updatePaymentSession({
+        id: id,
+        data: {
+          ...currentSession.data,
+          ...data,
+        },
+        currency_code: currentSession.currency_code,
+        amount: currentSession.amount,
+      });
 
       console.log("✅ Payment session updated successfully");
 
