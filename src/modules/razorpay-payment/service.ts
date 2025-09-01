@@ -67,6 +67,8 @@ interface RazorpayPaymentData {
 }
 
 class RazorpayProviderService extends AbstractPaymentProvider<Options> {
+  static resolutionKey = "razorpayProviderService";
+
   protected logger_: Logger;
   protected options_: Options;
   protected client: Razorpay;
@@ -125,14 +127,6 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
         currency: currency.toUpperCase(),
         receipt: `receipt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         payment_capture: 1, // Auto capture payment
-        notes: {
-          session_id: context?.session_id || "",
-          customer_email: context?.customer?.email || "",
-          medusa_cart_id: context?.cart_id || "",
-          ...(context?.customer && {
-            customer_data: JSON.stringify(context.customer),
-          }),
-        },
       };
 
       this.logger_.info(
@@ -182,24 +176,82 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
     input: AuthorizePaymentInput
   ): Promise<AuthorizePaymentOutput> {
     try {
-      const { payment_id, order_id, signature } = input.data as {
-        payment_id?: string;
-        order_id?: string;
-        signature?: string;
-      };
+      console.log(
+        "🔍 Authorize payment input:",
+        JSON.stringify(input, null, 2)
+      );
+
+      const sessionData = input.data as any; // Adjusted to use the correct property from AuthorizePaymentInput
+
+      // Try to get verification data from the session data (if it was updated)
+      let payment_id = sessionData?.payment_id;
+      let order_id = sessionData?.order_id;
+      let signature = sessionData?.signature;
+
+      // If not found in direct fields, check if they were added to the session data
+      if (!payment_id && sessionData?.data) {
+        payment_id = sessionData.data.payment_id;
+        order_id = sessionData.data.order_id;
+        signature = sessionData.data.signature;
+      }
+
+      console.log("📋 Extracted verification data:", {
+        payment_id,
+        order_id,
+        signature: signature ? "present" : "missing",
+      });
 
       if (!payment_id) {
+        console.log(
+          "⚠️ No payment_id found, checking original order for payments..."
+        );
+
+        // Fall back to checking the original order_id from session data
+        const originalOrderId =
+          sessionData?.order_id || sessionData?.data?.order_id;
+
+        if (originalOrderId) {
+          try {
+            const orderPayments =
+              await this.client.orders.fetchPayments(originalOrderId);
+            const successfulPayment = orderPayments.items?.find(
+              (payment: any) =>
+                payment.status === "captured" || payment.status === "authorized"
+            );
+
+            if (successfulPayment) {
+              console.log(
+                "✅ Found successful payment via order lookup:",
+                successfulPayment.id
+              );
+              return {
+                status: successfulPayment.captured ? "captured" : "authorized",
+                data: {
+                  id: successfulPayment.id,
+                  payment_id: successfulPayment.id,
+                  order_id: successfulPayment.order_id,
+                  amount: successfulPayment.amount,
+                  currency: successfulPayment.currency,
+                  status: successfulPayment.status,
+                  captured: successfulPayment.captured,
+                },
+              };
+            }
+          } catch (orderError: any) {
+            console.error("Error checking order payments:", orderError);
+          }
+        }
+
         return {
           status: "requires_more",
           data: {
-            id: order_id,
-            status: "pending",
-            error: "Payment ID is required for authorization",
+            error: "Payment verification data not found",
+            session_data_keys: Object.keys(sessionData || {}),
           },
         };
       }
 
-      // Verify signature using Razorpay utils if provided
+      // Verify signature if available
       if (signature && order_id && this.options_.apiSecret) {
         const isValidSignature = validatePaymentVerification(
           { order_id, payment_id },
@@ -208,7 +260,7 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
         );
 
         if (!isValidSignature) {
-          this.logger_.error("Invalid Razorpay signature verification");
+          console.error("❌ Invalid Razorpay signature verification");
           return {
             status: "error",
             data: {
@@ -218,6 +270,7 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
             },
           };
         }
+        console.log("✅ Signature verification passed");
       }
 
       // Fetch payment details from Razorpay
@@ -225,20 +278,19 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
         payment_id
       )) as RazorpayPaymentData;
 
-      this.logger_.info(
-        `Payment details fetched: ${JSON.stringify({
-          payment_id: payment.id,
-          status: payment.status,
-          captured: payment.captured,
-          amount: payment.amount,
-        })}`
-      );
+      console.log("📊 Payment details:", {
+        payment_id: payment.id,
+        status: payment.status,
+        captured: payment.captured,
+        amount: payment.amount,
+      });
 
       const isAuthorized =
         payment.status === "captured" || payment.status === "authorized";
 
       if (isAuthorized) {
         const status = payment.captured ? "captured" : "authorized";
+        console.log(`✅ Payment ${status}: ${payment_id}`);
 
         return {
           status,
@@ -256,6 +308,7 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
       }
 
       if (payment.status === "failed") {
+        console.error(`❌ Payment failed: ${payment_id}`);
         return {
           status: "error",
           data: {
@@ -266,17 +319,18 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
         };
       }
 
+      console.log(
+        `⏳ Payment requires more: ${payment_id}, status: ${payment.status}`
+      );
       return {
         status: "requires_more",
         data: {
           id: payment.id,
           status: payment.status,
-          payment_id: payment.id,
-          order_id: payment.order_id,
         },
       };
     } catch (error: any) {
-      this.logger_.error(`Error authorizing payment: ${error.message}`);
+      console.error("💥 Error authorizing payment:", error);
       throw new MedusaError(
         MedusaError.Types.UNEXPECTED_STATE,
         `Failed to authorize payment: ${error.message}`
