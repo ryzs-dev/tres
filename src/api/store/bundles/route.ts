@@ -27,7 +27,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "discount_3_items_amount", // NEW: Fixed amount for 3+ items (cents)
         "created_at",
         "updated_at",
-        "items.product.variants.inventory_items",
+        "items.*",
       ],
       filters: { is_active: true },
       pagination: {
