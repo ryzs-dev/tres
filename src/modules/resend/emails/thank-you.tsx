@@ -9,37 +9,43 @@ import {
   Link,
 } from "@react-email/components";
 
-export default function PostPurchaseEmail() {
+interface ThankYouEmailProps {
+  order: {
+    id: string;
+    email: string;
+    display_id: string;
+    total: number;
+    currency_code: string;
+  };
+}
+
+export function ThankYouEmail({ order }: ThankYouEmailProps) {
   return (
     <Html>
       <Head>
         {/* Import URW DIN */}
         <style>
           {`
-            @font-face {
-              font-family: 'URW DIN';
-              src: url('https://storage.tres.my/font/font%3Awoff2/URWDIN-Regular.woff2') format('woff2'),
-                   url('https://storage.tres.my/font/font%3Awoff/URWDIN-Regular.woff') format('woff');
-              font-weight: normal;
-              font-style: normal;
-            }
-            @font-face {
-              font-family: 'URW DIN';
-              src: url('https://storage.tres.my/font/font%3Awoff2/URWDIN-Italic.woff2') format('woff2'),
-                   url('https://storage.tres.my/font/font%3Awoff/URWDIN-Italic.woff') format('woff');
-              font-weight: normal;
-              font-style: italic;
-            }
-          `}
+              @font-face {
+                font-family: 'URW DIN';
+                src: url('https://storage.tres.my/font/font%3Awoff2/URWDIN-Regular.woff2') format('woff2'),
+                     url('https://storage.tres.my/font/font%3Awoff/URWDIN-Regular.woff') format('woff');
+                font-weight: normal;
+                font-style: normal;
+              }
+              @font-face {
+                font-family: 'URW DIN';
+                src: url('https://storage.tres.my/font/font%3Awoff2/URWDIN-Italic.woff2') format('woff2'),
+                     url('https://storage.tres.my/font/font%3Awoff/URWDIN-Italic.woff') format('woff');
+                font-weight: normal;
+                font-style: italic;
+              }
+            `}
         </style>
       </Head>
       <Body style={main}>
         <Container style={container}>
           <Section style={content}>
-            {/* Thank You Text */}
-            {/* <Text style={thankYouText}>Thank you</Text>
-            <Text style={subtitle}>FOR YOUR ORDER</Text> */}
-
             {/* Centered Image */}
             <div style={imageWrapper}>
               <Img
@@ -66,6 +72,7 @@ export default function PostPurchaseEmail() {
   );
 }
 
+// Styles remain the same as your original
 const main = {
   backgroundColor: "#f6f9fc",
   fontFamily: "'URW DIN', sans-serif",
@@ -97,25 +104,6 @@ const image = {
   height: "auto",
   borderRadius: "8px",
 };
-
-// const thankYouText = {
-//   fontSize: "48px",
-//   fontWeight: "bold",
-//   color: "#A9BEE2",
-//   margin: "0 0 10px 0",
-//   fontFamily: "'URW DIN', sans-serif",
-//   fontStyle: "italic",
-// };
-
-// const subtitle = {
-//   fontSize: "14px",
-//   fontWeight: "bold",
-//   color: "#333333",
-//   letterSpacing: "2px",
-//   margin: "0 0 30px 0",
-//   textTransform: "uppercase" as const,
-//   fontFamily: "'URW DIN', sans-serif",
-// };
 
 const description = {
   fontSize: "16px",

@@ -10,6 +10,7 @@ import {
 import { CreateEmailOptions, Resend } from "resend";
 import { orderPlacedEmail } from "./emails/order-placed";
 import { NewUserEmail } from "./emails/new-user";
+import { ThankYouEmail } from "./emails/thank-you";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -18,12 +19,14 @@ type InjectedDependencies = {
 enum Templates {
   ORDER_PLACED = "order-placed",
   NEW_USER = "new-user",
+  THANK_YOU = "thank-you", // Add this
 }
 
 const templates: { [key in Templates]?: (props: unknown) => React.ReactNode } =
   {
     [Templates.ORDER_PLACED]: orderPlacedEmail,
     [Templates.NEW_USER]: NewUserEmail,
+    [Templates.THANK_YOU]: ThankYouEmail, // Add this
   };
 
 type ResendOptions = {
@@ -87,7 +90,9 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.ORDER_PLACED:
         return "Order Confirmation";
       case Templates.NEW_USER:
-        return "Welcome to Tres!"; // <-- Add your custom subject here
+        return "Welcome to Tres!";
+      case Templates.THANK_YOU: // Add this
+        return "Thank You for Your Order!";
       default:
         return "New Email";
     }

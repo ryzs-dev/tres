@@ -39,9 +39,9 @@ export type UpdateFlexibleBundleWorkflowInput = {
 export const updateFlexibleBundleWorkflow = createWorkflow(
   "update-flexible-bundle",
   ({ bundle_id, update_data }: UpdateFlexibleBundleWorkflowInput) => {
-    // Get current bundle data
+    // Get current bundle data - use same pattern as your working workflows
     //@ts-ignore
-    const { data: currentBundles } = useQueryGraphStep({
+    const currentBundlesQuery = useQueryGraphStep({
       entity: "bundle",
       fields: ["*", "items.*"],
       filters: { id: bundle_id },
@@ -49,7 +49,7 @@ export const updateFlexibleBundleWorkflow = createWorkflow(
     }).config({ name: "get-current-bundle" });
 
     const currentBundle = transform(
-      { currentBundles },
+      { currentBundles: currentBundlesQuery.data },
       (data) => data.currentBundles[0]
     );
 
@@ -73,7 +73,7 @@ export const updateFlexibleBundleWorkflow = createWorkflow(
     });
 
     // Update bundle items if provided
-    //@ts-ignore
+    // @ts-ignore
     const updatedItems = transform(
       { update_data, currentBundle },
       (data: {
@@ -100,7 +100,7 @@ export const updateFlexibleBundleWorkflow = createWorkflow(
 
     // Retrieve final updated bundle with all discount fields
     //@ts-ignore
-    const { data: finalBundles } = useQueryGraphStep({
+    const finalBundlesQuery = useQueryGraphStep({
       entity: "bundle",
       fields: [
         "*",
@@ -116,7 +116,10 @@ export const updateFlexibleBundleWorkflow = createWorkflow(
     }).config({ name: "get-updated-bundle" });
 
     return new WorkflowResponse(
-      transform({ finalBundles }, (data) => data.finalBundles[0])
+      transform(
+        { finalBundles: finalBundlesQuery.data },
+        (data) => data.finalBundles[0]
+      )
     );
   }
 );
