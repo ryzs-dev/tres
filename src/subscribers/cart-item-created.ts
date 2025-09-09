@@ -157,7 +157,32 @@ export default async function cartItemCreatedHandler({
       }
 
       // Distribute the total discount proportionally across all items in the bundle
-      let remainingDiscount = totalDiscountAmount;
+      // let remainingDiscount = totalDiscountAmount;
+      // const itemUpdates: any[] = [];
+
+      // for (let i = 0; i < bundleItems.length; i++) {
+      //   const item = bundleItems[i];
+      //   const itemTotal = item.unit_price * item.quantity;
+      //   const itemProportion = itemTotal / bundleTotal;
+
+      //   // Calculate this item's share of the discount
+      //   let itemDiscountAmount: number;
+      //   if (i === bundleItems.length - 1) {
+      //     // Last item gets the remainder to avoid rounding errors
+      //     itemDiscountAmount = remainingDiscount;
+      //   } else {
+      //     itemDiscountAmount =
+      //       Math.round(totalDiscountAmount * itemProportion * 100) / 100;
+      //     remainingDiscount -= itemDiscountAmount;
+      //   }
+
+      //   const originalUnitPrice = item.unit_price;
+      //   const discountPerUnit = itemDiscountAmount / item.quantity;
+      //   const newUnitPrice = Math.max(0, originalUnitPrice - discountPerUnit);
+
+      // FIXED: Work entirely in CENTS to avoid floating point errors
+      const totalDiscountAmountInCents = Math.round(totalDiscountAmount * 100);
+      let remainingDiscountInCents = totalDiscountAmountInCents;
       const itemUpdates: any[] = [];
 
       for (let i = 0; i < bundleItems.length; i++) {
@@ -165,18 +190,21 @@ export default async function cartItemCreatedHandler({
         const itemTotal = item.unit_price * item.quantity;
         const itemProportion = itemTotal / bundleTotal;
 
-        // Calculate this item's share of the discount
-        let itemDiscountAmount: number;
+        // Calculate this item's share of the discount IN CENTS
+        let itemDiscountInCents: number;
         if (i === bundleItems.length - 1) {
-          // Last item gets the remainder to avoid rounding errors
-          itemDiscountAmount = remainingDiscount;
+          // Last item gets the remainder to ensure exact total
+          itemDiscountInCents = remainingDiscountInCents;
         } else {
-          itemDiscountAmount =
-            Math.round(totalDiscountAmount * itemProportion * 100) / 100;
-          remainingDiscount -= itemDiscountAmount;
+          // Calculate proportional share in cents (avoids floating point errors)
+          itemDiscountInCents = Math.round(
+            totalDiscountAmountInCents * itemProportion
+          );
+          remainingDiscountInCents -= itemDiscountInCents;
         }
 
         const originalUnitPrice = item.unit_price;
+        const itemDiscountAmount = itemDiscountInCents / 100; // Convert back to currency
         const discountPerUnit = itemDiscountAmount / item.quantity;
         const newUnitPrice = Math.max(0, originalUnitPrice - discountPerUnit);
 
@@ -192,8 +220,8 @@ export default async function cartItemCreatedHandler({
             // Store pricing info in cents for consistency
             original_price_cents: Math.round(originalUnitPrice * 100),
             discounted_price_cents: Math.round(newUnitPrice * 100),
-            actual_discount_amount: Math.round(itemDiscountAmount * 100), // Total discount for this item
-            bundle_total_discount: Math.round(totalDiscountAmount * 100), // Total bundle discount
+            actual_discount_amount: itemDiscountInCents, // Already in cents
+            bundle_total_discount: totalDiscountAmountInCents, // Already in cents
             discount_applied: true,
             discount_applied_at: new Date().toISOString(),
           },
