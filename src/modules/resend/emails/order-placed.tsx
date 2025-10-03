@@ -549,6 +549,6 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
   );
 }
 
-export default function orderPlacedEmail(props: OrderPlacedEmailProps) {
-  <OrderPlacedEmailComponent {...props} />;
-}
+export const orderPlacedEmail = (props: OrderPlacedEmailProps) => (
+  <OrderPlacedEmailComponent {...props} />
+);
