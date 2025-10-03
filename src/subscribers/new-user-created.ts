@@ -48,28 +48,34 @@ export default async function handleCustomerCreated({
     const notificationModuleService = container.resolve(Modules.NOTIFICATION);
 
     try {
-      const notifications = await notificationModuleService.createNotifications(
-        {
-          to: customer.email || "",
-          channel: "email",
-          template: "new-user",
-          data: {
-            user: {
-              first_name: customer.first_name,
-              email: customer.email,
-            },
-            promoCodes: [promoCode], // Use the generated unique code
+      const notification = await notificationModuleService.createNotifications({
+        to: customer.email || "",
+        channel: "email",
+        template: "new-user",
+        data: {
+          user: {
+            first_name: customer.first_name,
+            email: customer.email,
           },
-        }
-      );
+          promoCodes: [promoCode], // Use the generated unique code
+        },
+      });
 
-      if (!notifications?.length) {
+      if (!notification) {
+        console.error(
+          `❌ No notification created for ${customerId} (${customer.email})`
+        );
+      } else if (notification.status === "success") {
         console.log(
-          `Email NOT sent to ${customer.email} for customer ${customerId}`
+          `✅ Email sent successfully to ${notification.to} (customer ${customerId})`
+        );
+      } else if (notification.status === "failure") {
+        console.error(
+          `❌ Email FAILED to send to ${notification.to} (customer ${customerId})`
         );
       } else {
-        console.log(
-          `Email sent to ${customer.email} for customer ${customerId}`
+        console.warn(
+          `⚠️ Email status pending for ${notification.to} (customer ${customerId})`
         );
       }
     } catch (error) {
