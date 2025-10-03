@@ -46,18 +46,38 @@ export default async function handleCustomerCreated({
 
     // 3. Send welcome email with promo code
     const notificationModuleService = container.resolve(Modules.NOTIFICATION);
-    await notificationModuleService.createNotifications({
-      to: customer.email || "",
-      channel: "email",
-      template: "new-user",
-      data: {
-        user: {
-          first_name: customer.first_name,
-          email: customer.email,
-        },
-        promoCodes: [promoCode], // Use the generated unique code
-      },
-    });
+
+    try {
+      const notifications = await notificationModuleService.createNotifications(
+        {
+          to: customer.email || "",
+          channel: "email",
+          template: "new-user",
+          data: {
+            user: {
+              first_name: customer.first_name,
+              email: customer.email,
+            },
+            promoCodes: [promoCode], // Use the generated unique code
+          },
+        }
+      );
+
+      if (!notifications?.length) {
+        console.log(
+          `Email NOT sent to ${customer.email} for customer ${customerId}`
+        );
+      } else {
+        console.log(
+          `Email sent to ${customer.email} for customer ${customerId}`
+        );
+      }
+    } catch (error) {
+      console.error(
+        `Error sending email for ${customerId} (${customer.email}):`,
+        error
+      );
+    }
 
     console.log(
       `✅ Customer ${customerId} processed: added to group, generated promo code ${promoCode}, sent email`
