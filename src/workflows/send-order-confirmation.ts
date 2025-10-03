@@ -1,5 +1,6 @@
 import {
   createWorkflow,
+  StepResponse,
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
@@ -15,7 +16,17 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // @ts-ignore
     const { data: orders } = useQueryGraphStep({
       entity: "order",
-      fields: ["id", "email", "currency_code", "total", "items.*"],
+      fields: [
+        "*",
+        "id",
+        "email",
+        "currency_code",
+        "total",
+        "items.*",
+        "shipping_methods.*",
+        "billing_address.*",
+        "shipping_address.*",
+      ],
       filters: {
         id,
       },

@@ -58,176 +58,490 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
 
   return (
     <Html lang="en">
-      <Container style={{ padding: "32px", fontFamily: "Arial, sans-serif" }}>
-        <Heading style={{ fontSize: "24px", marginBottom: "12px" }}>
-          Thank you for your order!
+      <Container
+        style={{
+          maxWidth: "600px",
+          margin: "0 auto",
+          padding: "40px 20px",
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        }}
+      >
+        {/* Header */}
+        <Heading
+          style={{
+            fontSize: "28px",
+            fontWeight: "600",
+            marginBottom: "8px",
+            color: "#000000",
+            letterSpacing: "-0.5px",
+          }}
+        >
+          Order confirmed
         </Heading>
-        <Text style={{ fontSize: "14px", marginBottom: "24px" }}>
-          Here's a summary of your purchase, <strong>{order.email}</strong>:
+        <Text
+          style={{
+            fontSize: "16px",
+            marginBottom: "32px",
+            color: "#666666",
+            lineHeight: "24px",
+          }}
+        >
+          Hi {order.email}, we're getting your order ready.
         </Text>
 
-        {/* Render Bundle Items */}
-        {Object.values(groupedItems.bundles).map((bundle: any) => (
-          <Section
-            key={bundle.bundle_id}
-            style={{
-              padding: "16px",
-              borderTop: "1px solid #eaeaea",
-              backgroundColor: "#f9f9f9",
-              borderRadius: "8px",
-              marginBottom: "16px",
-            }}
-          >
-            <Text
+        {/* Order Items */}
+        <Section style={{ marginBottom: "32px" }}>
+          {Object.values(groupedItems.bundles).map((bundle: any) => (
+            <Section
+              key={bundle.bundle_id}
               style={{
-                margin: "0 0 12px 0",
-                fontWeight: "700",
-                fontSize: "16px",
-                color: "#333",
+                marginBottom: "24px",
+                paddingBottom: "24px",
+                borderBottom: "1px solid #e5e5e5",
               }}
             >
-              {bundle.bundle_title} (Bundle)
-            </Text>
+              <Text
+                style={{
+                  margin: "0 0 16px 0",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  color: "#666666",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Bundle: {bundle.bundle_title}
+              </Text>
+              {bundle.items.map((item: any) => (
+                <Row key={item.id} style={{ marginBottom: "16px" }}>
+                  <Column style={{ width: "64px" }}>
+                    <Img
+                      src={item.thumbnail || "/images/placeholder.png"}
+                      alt={item.product_title || "Product image"}
+                      width="64"
+                      height="64"
+                      style={{
+                        borderRadius: "4px",
+                        objectFit: "cover",
+                        display: "block",
+                        border: "1px solid #e5e5e5",
+                      }}
+                    />
+                  </Column>
+                  <Column style={{ paddingLeft: "16px", verticalAlign: "top" }}>
+                    <Text
+                      style={{
+                        margin: "0 0 4px 0",
+                        fontWeight: "500",
+                        fontSize: "14px",
+                        color: "#000000",
+                      }}
+                    >
+                      {item.product_title}
+                    </Text>
+                    {item.variant_title && (
+                      <Text
+                        style={{
+                          fontSize: "13px",
+                          color: "#666666",
+                          margin: "0 0 4px 0",
+                        }}
+                      >
+                        {item.variant_title}
+                      </Text>
+                    )}
+                    <Text
+                      style={{
+                        fontSize: "13px",
+                        color: "#666666",
+                        margin: "0",
+                      }}
+                    >
+                      Quantity: {item.quantity}
+                    </Text>
+                  </Column>
+                </Row>
+              ))}
+              <Text
+                style={{
+                  margin: "12px 0 0",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  textAlign: "right",
+                  color: "#000000",
+                }}
+              >
+                {formatPrice(bundle.total)}
+              </Text>
+            </Section>
+          ))}
 
-            {bundle.items.map((item: any) => (
-              <Row key={item.id} style={{ marginBottom: "12px" }}>
-                <Column style={{ width: "80px" }}>
+          {groupedItems.individual.map((item) => (
+            <Section
+              key={item.id}
+              style={{
+                marginBottom: "24px",
+                paddingBottom: "24px",
+                borderBottom: "1px solid #e5e5e5",
+              }}
+            >
+              <Row>
+                <Column style={{ width: "64px" }}>
                   <Img
-                    src={item.thumbnail || "/images/placeholder.png"}
+                    src={item.thumbnail || "https://via.placeholder.com/64"}
                     alt={item.product_title || "Product image"}
-                    width="80"
-                    height="auto"
+                    width="64"
+                    height="64"
                     style={{
-                      borderRadius: "6px",
+                      borderRadius: "4px",
                       objectFit: "cover",
                       display: "block",
+                      border: "1px solid #e5e5e5",
                     }}
                   />
                 </Column>
-                <Column style={{ paddingLeft: "12px", verticalAlign: "top" }}>
+
+                <Column
+                  style={{
+                    paddingLeft: "16px",
+                    verticalAlign: "top",
+                    width: "calc(100% - 180px)",
+                  }}
+                >
                   <Text
-                    style={{ margin: "0", fontWeight: "500", fontSize: "13px" }}
+                    style={{
+                      fontWeight: "500",
+                      fontSize: "14px",
+                      margin: "0 0 4px 0",
+                      color: "#000000",
+                    }}
                   >
                     {item.product_title}
                   </Text>
                   {item.variant_title && (
                     <Text
                       style={{
-                        margin: "2px 0 0 0",
-                        fontSize: "12px",
-                        color: "#666",
+                        fontSize: "13px",
+                        color: "#666666",
+                        margin: "0 0 4px 0",
                       }}
                     >
                       {item.variant_title}
                     </Text>
                   )}
                   <Text
+                    style={{ fontSize: "13px", color: "#666666", margin: "0" }}
+                  >
+                    Quantity: {item.quantity}
+                  </Text>
+                </Column>
+
+                <Column
+                  style={{
+                    textAlign: "right",
+                    verticalAlign: "top",
+                    width: "100px",
+                  }}
+                >
+                  <Text
                     style={{
-                      margin: "4px 0 0",
-                      fontSize: "12px",
-                      color: "#888",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      margin: "0",
+                      color: "#000000",
                     }}
                   >
-                    Qty: {item.quantity}
+                    {formatPrice(item.total)}
                   </Text>
                 </Column>
               </Row>
-            ))}
+            </Section>
+          ))}
+        </Section>
 
-            <Text
+        {/* Order Summary */}
+        <Section style={{ marginBottom: "40px" }}>
+          <Row style={{ marginBottom: "8px" }}>
+            <Column style={{ width: "50%" }}>
+              <Text style={{ fontSize: "14px", color: "#666666", margin: "0" }}>
+                Subtotal
+              </Text>
+            </Column>
+            <Column style={{ width: "50%", textAlign: "right" }}>
+              <Text style={{ fontSize: "14px", color: "#000000", margin: "0" }}>
+                {formatPrice(order.total)}
+              </Text>
+            </Column>
+          </Row>
+          <Row
+            style={{
+              marginTop: "16px",
+              paddingTop: "16px",
+              borderTop: "2px solid #000000",
+            }}
+          >
+            <Column style={{ width: "50%" }}>
+              <Text
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#000000",
+                  margin: "0",
+                }}
+              >
+                Total
+              </Text>
+            </Column>
+            <Column style={{ width: "50%", textAlign: "right" }}>
+              <Text
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#000000",
+                  margin: "0",
+                }}
+              >
+                {formatPrice(order.total)}
+              </Text>
+            </Column>
+          </Row>
+        </Section>
+
+        {/* Addresses */}
+        <Section style={{ marginBottom: "40px" }}>
+          <Row>
+            <Column
               style={{
-                margin: "12px 0 0",
-                fontSize: "15px",
-                fontWeight: "600",
-                textAlign: "right",
-                color: "#333",
+                width: "50%",
+                paddingRight: "16px",
+                verticalAlign: "top",
               }}
             >
-              Bundle Total: {formatPrice(bundle.total)}
-            </Text>
-          </Section>
-        ))}
-
-        {/* Render Individual Items */}
-        {groupedItems.individual.map((item) => (
-          <Section
-            key={item.id}
-            style={{
-              padding: "20px 0",
-              borderTop: "1px solid #eaeaea",
-            }}
-          >
-            <Row>
-              <Column style={{ width: "100px" }}>
-                <Img
-                  src={item.thumbnail || "https://via.placeholder.com/100"}
-                  alt={item.product_title || "Product image"}
-                  width="100"
-                  height="auto"
-                  style={{
-                    borderRadius: "8px",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
-              </Column>
-
-              <Column style={{ paddingLeft: "16px", verticalAlign: "top" }}>
-                <Text
-                  style={{ margin: "0", fontWeight: "600", fontSize: "14px" }}
-                >
-                  {item.product_title}
-                </Text>
-                {item.variant_title && (
+              <Text
+                style={{
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  marginBottom: "8px",
+                  color: "#000000",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Shipping Address
+              </Text>
+              {order.shipping_address && (
+                <>
                   <Text
                     style={{
-                      margin: "4px 0 0 0",
-                      fontSize: "13px",
-                      color: "#666",
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
                     }}
                   >
-                    {item.variant_title}
+                    {order.shipping_address.first_name}{" "}
+                    {order.shipping_address.last_name}
                   </Text>
-                )}
-                <Text
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: "13px",
-                    color: "#888",
-                  }}
-                >
-                  Qty: {item.quantity}
-                </Text>
-                <Text
-                  style={{
-                    margin: "8px 0 0",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                  }}
-                >
-                  {formatPrice(item.total)}
-                </Text>
-              </Column>
-            </Row>
-          </Section>
-        ))}
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.shipping_address.address_1}
+                  </Text>
+                  {order.shipping_address.address_2 && (
+                    <Text
+                      style={{
+                        fontSize: "14px",
+                        margin: "0 0 2px 0",
+                        color: "#666666",
+                      }}
+                    >
+                      {order.shipping_address.address_2}
+                    </Text>
+                  )}
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.shipping_address.city},{" "}
+                    {order.shipping_address.province}{" "}
+                    {order.shipping_address.postal_code}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.shipping_address.country_code?.toUpperCase()}
+                  </Text>
+                  {order.shipping_address.phone && (
+                    <Text
+                      style={{
+                        fontSize: "14px",
+                        margin: "8px 0 0 0",
+                        color: "#666666",
+                      }}
+                    >
+                      {order.shipping_address.phone}
+                    </Text>
+                  )}
+                </>
+              )}
+            </Column>
 
-        <Section
-          style={{
-            marginTop: "24px",
-            paddingTop: "16px",
-            borderTop: "2px solid #333",
-          }}
-        >
+            <Column
+              style={{
+                width: "50%",
+                paddingLeft: "16px",
+                verticalAlign: "top",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  marginBottom: "8px",
+                  color: "#000000",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Billing Address
+              </Text>
+              {order.billing_address && (
+                <>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.billing_address.first_name}{" "}
+                    {order.billing_address.last_name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.billing_address.address_1}
+                  </Text>
+                  {order.billing_address.address_2 && (
+                    <Text
+                      style={{
+                        fontSize: "14px",
+                        margin: "0 0 2px 0",
+                        color: "#666666",
+                      }}
+                    >
+                      {order.billing_address.address_2}
+                    </Text>
+                  )}
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.billing_address.city},{" "}
+                    {order.billing_address.province}{" "}
+                    {order.billing_address.postal_code}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: "14px",
+                      margin: "0 0 2px 0",
+                      color: "#666666",
+                    }}
+                  >
+                    {order.billing_address.country_code?.toUpperCase()}
+                  </Text>
+                  {order.billing_address.phone && (
+                    <Text
+                      style={{
+                        fontSize: "14px",
+                        margin: "8px 0 0 0",
+                        color: "#666666",
+                      }}
+                    >
+                      {order.billing_address.phone}
+                    </Text>
+                  )}
+                </>
+              )}
+            </Column>
+          </Row>
+        </Section>
+
+        {/* Contact Info */}
+        <Section style={{ paddingTop: "32px", borderTop: "1px solid #e5e5e5" }}>
           <Text
             style={{
-              fontSize: "16px",
-              fontWeight: "700",
-              textAlign: "right",
-              margin: "0",
+              fontSize: "12px",
+              fontWeight: "600",
+              marginBottom: "12px",
+              color: "#000000",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
           >
-            Order Total: {formatPrice(order.total)}
+            Need Help?
+          </Text>
+          <Text
+            style={{ fontSize: "14px", margin: "0 0 4px 0", color: "#666666" }}
+          >
+            Email:{" "}
+            <a
+              href="mailto:admin@tres.my"
+              style={{ color: "#000000", textDecoration: "none" }}
+            >
+              admin@tres.my
+            </a>
+          </Text>
+          <Text
+            style={{ fontSize: "14px", margin: "0 0 16px 0", color: "#666666" }}
+          >
+            Phone:{" "}
+            <a
+              href="tel:+60135385308"
+              style={{ color: "#000000", textDecoration: "none" }}
+            >
+              +60 13 538 5308
+            </a>
+          </Text>
+
+          <Text
+            style={{
+              fontSize: "12px",
+              fontWeight: "600",
+              marginBottom: "8px",
+              marginTop: "16px",
+              color: "#000000",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Warehouse Pickup
+          </Text>
+          <Text
+            style={{ fontSize: "14px", margin: "0 0 2px 0", color: "#666666" }}
+          >
+            24 Lorong Batu Jelutong Barat
+          </Text>
+          <Text style={{ fontSize: "14px", margin: "0", color: "#666666" }}>
+            11600 Jelutong, Penang
           </Text>
         </Section>
       </Container>
@@ -235,6 +549,6 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
   );
 }
 
-export const orderPlacedEmail = (props: OrderPlacedEmailProps) => (
-  <OrderPlacedEmailComponent {...props} />
-);
+export default function orderPlacedEmail(props: OrderPlacedEmailProps) {
+  <OrderPlacedEmailComponent {...props} />;
+}
