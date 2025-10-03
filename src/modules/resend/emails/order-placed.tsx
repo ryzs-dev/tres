@@ -270,10 +270,11 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
             </Column>
             <Column style={{ width: "50%", textAlign: "right" }}>
               <Text style={{ fontSize: "14px", color: "#000000", margin: "0" }}>
-                {formatPrice(order.total)}
+                {formatPrice(order.subtotal)}
               </Text>
             </Column>
           </Row>
+
           <Row
             style={{
               marginTop: "16px",
@@ -308,6 +309,37 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
           </Row>
         </Section>
 
+        {/* Shipping Method */}
+        {order.shipping_methods && order.shipping_methods.length > 0 && (
+          <Section style={{ marginBottom: "40px" }}>
+            <Text
+              style={{
+                fontSize: "12px",
+                fontWeight: "600",
+                marginBottom: "8px",
+                color: "#000000",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Shipping Method
+            </Text>
+            {order.shipping_methods.map((method: any) => (
+              <div key={method.id}>
+                <Text
+                  style={{
+                    fontSize: "14px",
+                    margin: "0",
+                    color: "#666666",
+                  }}
+                >
+                  {method.name || "Standard Shipping"}
+                </Text>
+              </div>
+            ))}
+          </Section>
+        )}
+
         {/* Addresses */}
         <Section style={{ marginBottom: "40px" }}>
           <Row>
@@ -330,7 +362,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
               >
                 Shipping Address
               </Text>
-              {order.shipping_address && (
+              {order.shipping_address ? (
                 <>
                   <Text
                     style={{
@@ -339,8 +371,8 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.shipping_address.first_name}{" "}
-                    {order.shipping_address.last_name}
+                    {order.shipping_address.first_name || ""}{" "}
+                    {order.shipping_address.last_name || ""}
                   </Text>
                   <Text
                     style={{
@@ -349,7 +381,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.shipping_address.address_1}
+                    {order.shipping_address.address_1 || ""}
                   </Text>
                   {order.shipping_address.address_2 && (
                     <Text
@@ -369,9 +401,9 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.shipping_address.city},{" "}
-                    {order.shipping_address.province}{" "}
-                    {order.shipping_address.postal_code}
+                    {order.shipping_address.city || ""},{" "}
+                    {order.shipping_address.province || ""}{" "}
+                    {order.shipping_address.postal_code || ""}
                   </Text>
                   <Text
                     style={{
@@ -380,7 +412,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.shipping_address.country_code?.toUpperCase()}
+                    {order.shipping_address.country_code?.toUpperCase() || ""}
                   </Text>
                   {order.shipping_address.phone && (
                     <Text
@@ -394,6 +426,10 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                     </Text>
                   )}
                 </>
+              ) : (
+                <Text style={{ fontSize: "14px", color: "#999999" }}>
+                  No shipping address provided
+                </Text>
               )}
             </Column>
 
@@ -416,7 +452,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
               >
                 Billing Address
               </Text>
-              {order.billing_address && (
+              {order.billing_address ? (
                 <>
                   <Text
                     style={{
@@ -425,8 +461,8 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.billing_address.first_name}{" "}
-                    {order.billing_address.last_name}
+                    {order.billing_address.first_name || ""}{" "}
+                    {order.billing_address.last_name || ""}
                   </Text>
                   <Text
                     style={{
@@ -435,7 +471,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.billing_address.address_1}
+                    {order.billing_address.address_1 || ""}
                   </Text>
                   {order.billing_address.address_2 && (
                     <Text
@@ -455,9 +491,9 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.billing_address.city},{" "}
-                    {order.billing_address.province}{" "}
-                    {order.billing_address.postal_code}
+                    {order.billing_address.city || ""},{" "}
+                    {order.billing_address.province || ""}{" "}
+                    {order.billing_address.postal_code || ""}
                   </Text>
                   <Text
                     style={{
@@ -466,7 +502,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                       color: "#666666",
                     }}
                   >
-                    {order.billing_address.country_code?.toUpperCase()}
+                    {order.billing_address.country_code?.toUpperCase() || ""}
                   </Text>
                   {order.billing_address.phone && (
                     <Text
@@ -480,6 +516,10 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                     </Text>
                   )}
                 </>
+              ) : (
+                <Text style={{ fontSize: "14px", color: "#999999" }}>
+                  No billing address provided
+                </Text>
               )}
             </Column>
           </Row>
