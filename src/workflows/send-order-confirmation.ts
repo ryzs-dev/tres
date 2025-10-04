@@ -40,14 +40,6 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
           order: orders[0],
         },
       },
-      {
-        to: orders[0].email ?? "",
-        channel: "email",
-        template: "thank-you", // Your new thank you email
-        data: {
-          order: orders[0],
-        },
-      },
     ]);
 
     return new WorkflowResponse(notification);

@@ -525,29 +525,6 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
           </Row>
         </Section>
 
-        {/* Warehouse Pickup Notice */}
-        <Section
-          style={{
-            marginBottom: "32px",
-            padding: "20px",
-            backgroundColor: "#f9f9f9",
-            borderRadius: "8px",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: "14px",
-              lineHeight: "22px",
-              color: "#333333",
-              margin: "0",
-            }}
-          >
-            For warehouse pick-up, please contact us at the phone number
-            provided below to arrange your collection. Our team will assist you
-            in scheduling and organising the service.
-          </Text>
-        </Section>
-
         {/* Contact Info */}
         <Section style={{ paddingTop: "32px", borderTop: "1px solid #e5e5e5" }}>
           <Text
