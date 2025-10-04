@@ -583,6 +583,18 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
           <Text style={{ fontSize: "14px", margin: "0", color: "#666666" }}>
             11600 Jelutong, Penang
           </Text>
+          <Img
+            src="https://storage.tres.my/order-confirm.jpeg"
+            alt="Order Confirmation Image"
+            width="600"
+            style={{
+              width: "100%",
+              maxWidth: "600px",
+              height: "auto",
+              display: "block",
+              margin: "0 auto",
+            }}
+          />
         </Section>
       </Container>
     </Html>
