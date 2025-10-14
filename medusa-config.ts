@@ -22,9 +22,9 @@ module.exports = defineConfig({
       | "server",
     databaseUrl: process.env.DATABASE_URL,
     http: {
-      storeCors: "http://localhost:8000",
+      storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
-      authCors: "http://localhost:8000",
+      authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
