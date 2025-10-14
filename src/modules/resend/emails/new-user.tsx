@@ -364,7 +364,8 @@ export function NewUserEmail({
 
             {/* Footer Info */}
             <Text style={footerText}>
-              Questions? Reply to this email or contact our support team.
+              Questions? Email us at admin@tres.my or contact 011-5111 3350 for
+              support.
             </Text>
           </Section>
         </Container>
