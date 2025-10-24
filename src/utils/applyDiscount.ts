@@ -2,6 +2,10 @@ type SelectedItemWithPrice = {
   variant_id: string;
   quantity: number;
   unitPrice: number; // in cents
+  originalPrice?: number; // in cents
+  item_id?: string;
+  sku?: string;
+  product_title?: string;
 };
 
 export const applyDiscount = (
