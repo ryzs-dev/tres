@@ -270,7 +270,11 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
             </Column>
             <Column style={{ width: "50%", textAlign: "right" }}>
               <Text style={{ fontSize: "14px", color: "#000000", margin: "0" }}>
-                {formatPrice(order.subtotal)}
+                {formatPrice(
+                  typeof order.subtotal === "number"
+                    ? order.subtotal
+                    : parseFloat(order.subtotal?.toString() || "0")
+                )}
               </Text>
             </Column>
           </Row>
@@ -303,7 +307,11 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                   margin: "0",
                 }}
               >
-                {formatPrice(order.total)}
+                {formatPrice(
+                  typeof order.total === "number"
+                    ? order.total
+                    : parseFloat(order.total?.toString() || "0")
+                )}
               </Text>
             </Column>
           </Row>

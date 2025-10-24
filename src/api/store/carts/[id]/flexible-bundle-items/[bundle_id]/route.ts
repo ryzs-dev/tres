@@ -82,9 +82,6 @@ export async function PATCH(req: MedusaRequest, res: MedusaResponse) {
     const cartId = req.params.id;
     const bundleId = req.params.bundle_id;
 
-    console.log(`🔄 PATCH: Updating bundle ${bundleId} in cart ${cartId}`);
-    console.log("Raw request body:", req.body);
-
     // Manually validate and parse the request body since validatedBody is undefined
     let selectedItems: {
       item_id: string;

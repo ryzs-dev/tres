@@ -113,21 +113,27 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
     input: InitiatePaymentInput
   ): Promise<InitiatePaymentOutput> {
     try {
-      const { amount, currency, context } = input.data as {
+      const { amount, currency, metadata } = input.data as {
         amount: number;
         currency: string;
-        context?: any;
+        metadata?: Record<string, string>;
       };
 
+      console.log("Input", input.data);
+
       // Convert amount to smallest currency unit (cents for MYR)
-      const amountInSmallestUnit = Math.round(amount);
+      const amountInSmallestUnit = Math.round(amount) * 100;
+      const receiptId = metadata?.cart_id || `tres_receipt_${Date.now()}`;
+      const currencyCode = currency.toUpperCase();
 
       const orderData: RazorpayOrderData = {
         amount: amountInSmallestUnit,
-        currency: currency.toUpperCase(),
-        receipt: `receipt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        payment_capture: 1, // Auto capture payment
+        currency: currencyCode,
+        receipt: receiptId,
+        payment_capture: 1,
       };
+
+      console.log("Creating Razorpay order:", orderData);
 
       this.logger_.info(
         `Creating Razorpay order: ${JSON.stringify({
@@ -147,26 +153,30 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
           status: order.status,
         })}`
       );
+      console.log("Razorpay order created:", order);
+      console.log("Razorpay order amount:", Number(order.amount) / 100);
 
       return {
         id: order.id,
         data: {
           id: order.id,
           order_id: order.id,
-          amount: order.amount,
+          amount: Number(order.amount),
           currency: order.currency,
           status: order.status,
           receipt: order.receipt,
-          key_id: this.options_.apiKey, // For frontend integration
+          key_id: this.options_.apiKey,
           created_at: order.created_at,
           notes: order.notes,
         },
       };
     } catch (error: any) {
-      this.logger_.error(`Error initiating Razorpay payment: ${error.message}`);
+      this.logger_.error(
+        `Error initiating Razorpay payment: ${error.error.reason}`
+      );
       throw new MedusaError(
         MedusaError.Types.UNEXPECTED_STATE,
-        `Failed to initiate payment: ${error.message}`
+        `Failed to initiate payment: ${error.error.reason}`
       );
     }
   }
@@ -183,17 +193,15 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
 
       const sessionData = input.data as any; // Adjusted to use the correct property from AuthorizePaymentInput
 
-      // Try to get verification data from the session data (if it was updated)
-      let payment_id = sessionData?.payment_id;
-      let order_id = sessionData?.order_id;
-      let signature = sessionData?.signature;
+      const sessionContext = input.context as any;
 
-      // If not found in direct fields, check if they were added to the session data
-      if (!payment_id && sessionData?.data) {
-        payment_id = sessionData.data.payment_id;
-        order_id = sessionData.data.order_id;
-        signature = sessionData.data.signature;
-      }
+      console.log("📦 Session data:", sessionData);
+      console.log("📋 Session context:", sessionContext);
+
+      // Try to get verification data from the session data (if it was updated)
+      let payment_id = sessionContext?.id;
+      let order_id = sessionContext?.order_id;
+      let signature = sessionContext?.signature;
 
       console.log("📋 Extracted verification data:", {
         payment_id,
@@ -214,6 +222,8 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
           try {
             const orderPayments =
               await this.client.orders.fetchPayments(originalOrderId);
+
+            console.log(orderPayments);
             const successfulPayment = orderPayments.items?.find(
               (payment: any) =>
                 payment.status === "captured" || payment.status === "authorized"
@@ -249,28 +259,6 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
             session_data_keys: Object.keys(sessionData || {}),
           },
         };
-      }
-
-      // Verify signature if available
-      if (signature && order_id && this.options_.apiSecret) {
-        const isValidSignature = validatePaymentVerification(
-          { order_id, payment_id },
-          signature,
-          this.options_.apiSecret
-        );
-
-        if (!isValidSignature) {
-          console.error("❌ Invalid Razorpay signature verification");
-          return {
-            status: "error",
-            data: {
-              id: order_id,
-              status: "error",
-              message: "Invalid payment signature",
-            },
-          };
-        }
-        console.log("✅ Signature verification passed");
       }
 
       // Fetch payment details from Razorpay
@@ -347,6 +335,8 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
         payment_id?: string;
         amount?: number;
       };
+
+      console.log("Capture Payment Step Input:", input.data);
 
       if (!payment_id) {
         throw new MedusaError(

@@ -129,6 +129,8 @@ class StripePaymentProviderService extends AbstractPaymentProvider<Options> {
             (this.options_ as { capture?: boolean })?.capture ?? false;
           const status = capture ? "captured" : "authorized";
 
+          console.log("Payment authorized:", paymentIntent);
+
           return {
             status,
             data: {

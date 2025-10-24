@@ -44,9 +44,7 @@ export const removeFlexibleBundleFromCartWorkflow = createWorkflow(
           data.cart.items?.filter((item) => {
             // Check for flexible bundle metadata
             const isFlexibleBundleItem =
-              item?.metadata?.bundle_id === data.bundle_id &&
-              (item?.metadata?.is_from_bundle === true ||
-                item?.metadata?.is_bundle_item === true);
+              item?.metadata?.bundle_id === data.bundle_id;
 
             if (isFlexibleBundleItem) {
               console.log(

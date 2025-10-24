@@ -1,5 +1,28 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 
+interface CartItem {
+  id: string;
+  unit_price: number;
+  quantity: number;
+  metadata?: {
+    is_from_bundle?: boolean;
+    bundle_id?: string;
+    original_price_cents?: number;
+    discount_applied?: boolean;
+    [key: string]: any;
+  };
+  variant?: {
+    prices?: Array<{ amount: number }>;
+  };
+}
+
+interface BundleDiscount {
+  hasDiscount: boolean;
+  type: "percentage" | "fixed" | "none";
+  rate?: number;
+  amount?: number;
+}
+
 export default async function cartUpdatedHandler({
   event,
   container,
@@ -11,14 +34,12 @@ export default async function cartUpdatedHandler({
     return;
   }
 
-  console.log(`🔄 Cart ${cartId} updated - checking bundle discounts...`);
-
   try {
     const query = container.resolve("query");
     const cartModuleService = container.resolve("cart");
 
-    // Get all cart items with bundle metadata
-    const { data: allCartItems } = await query.graph({
+    // Fetch cart with items
+    const { data: cartData } = await query.graph({
       entity: "cart",
       fields: [
         "*",
@@ -31,325 +52,292 @@ export default async function cartUpdatedHandler({
       filters: { id: cartId },
     });
 
-    if (!allCartItems || allCartItems.length === 0) {
-      console.log("📦 No items in cart");
-      return;
-    }
+    // Handle response format variations
+    const cart = Array.isArray(cartData) ? cartData[0] : cartData;
 
-    // Group items by bundle_id
-    const bundleGroups = new Map<string, any[]>();
-    const nonBundleItems: any[] = [];
+    // Group items by bundle
+    // const bundleGroups = groupItemsByBundle(items);
 
-    allCartItems.forEach((item) => {
-      const metadata = item.metadata as {
-        is_from_bundle?: boolean;
-        bundle_id?: string;
-      } | null;
-      if (metadata?.is_from_bundle && metadata?.bundle_id) {
-        const bundleId = metadata.bundle_id;
-        if (!bundleGroups.has(bundleId)) {
-          bundleGroups.set(bundleId, []);
-        }
-        bundleGroups.get(bundleId)!.push(item);
-      } else {
-        nonBundleItems.push(item);
-      }
-    });
-
-    console.log(`📊 Found ${bundleGroups.size} bundles to process`);
+    // if (bundleGroups.size === 0) {
+    //   console.log("⏭️ No bundle items found, skipping");
+    //   return;
+    // }
 
     // Process each bundle
-    for (const [bundleId, bundleItems] of bundleGroups) {
-      await recalculateBundleDiscount(
-        bundleId,
-        bundleItems,
-        query,
-        cartModuleService
-      );
-    }
-
-    console.log("✅ Bundle discount recalculation completed");
+    // for (const [bundleId, bundleItems] of bundleGroups) {
+    //   await processBundleDiscounts(
+    //     bundleId,
+    //     bundleItems,
+    //     query,
+    //     cartModuleService
+    //   );
+    // }
   } catch (error) {
     console.error("❌ Error in cart updated handler:", error);
   }
 }
 
-async function recalculateBundleDiscount(
-  bundleId: string,
-  bundleItems: any[],
-  query: any,
-  cartModuleService: any
-) {
-  try {
-    console.log(
-      `🔍 Processing bundle ${bundleId} with ${bundleItems.length} items`
-    );
+// function groupItemsByBundle(items: any[]): Map<string, CartItem[]> {
+//   const bundleGroups = new Map<string, CartItem[]>();
 
-    // Get bundle configuration
-    const { data: bundles } = await query.graph({
-      entity: "bundle",
-      fields: [
-        "id",
-        "title",
-        "discount_type",
-        "discount_2_items",
-        "discount_3_items",
-        "discount_2_items_amount",
-        "discount_3_items_amount",
-      ],
-      filters: {
-        id: bundleId,
-        is_active: true,
-      },
-    });
+//   items.forEach((item: any) => {
+//     const { is_from_bundle, bundle_id } = item.metadata || {};
 
-    const bundle = bundles?.[0];
-    if (!bundle) {
-      console.log(`⚠️ Bundle ${bundleId} not found or inactive`);
-      // ADDED: Reset items to original prices when bundle is not found/inactive
-      await resetBundleItemsToOriginalPrice(bundleItems, cartModuleService);
-      return;
-    }
+//     if (is_from_bundle === true && bundle_id) {
+//       if (!bundleGroups.has(bundle_id)) {
+//         bundleGroups.set(bundle_id, []);
+//       }
+//       bundleGroups.get(bundle_id)!.push(item);
+//     }
+//   });
 
-    // Calculate current total items in bundle
-    const totalBundleItems = bundleItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
+//   return bundleGroups;
+// }
 
-    // Get discount info based on current item count
-    const discountInfo = calculateDiscountForItems(totalBundleItems, bundle);
+// async function processBundleDiscounts(
+//   bundleId: string,
+//   bundleItems: CartItem[],
+//   query: any,
+//   cartModuleService: any
+// ) {
+//   try {
+//     console.log(
+//       `\n🎯 Processing bundle ${bundleId} (${bundleItems.length} items)`
+//     );
 
-    if (!discountInfo.hasDiscount) {
-      console.log(`❌ No discount applicable for ${totalBundleItems} items`);
-      // MODIFIED: Reset items to original prices when no discount applies
-      await resetBundleItemsToOriginalPrice(bundleItems, cartModuleService);
-      return;
-    }
+//     // Calculate total items
+//     const totalItems = bundleItems.reduce(
+//       (sum, item) => sum + item.quantity,
+//       0
+//     );
 
-    console.log(`💰 Applying ${discountInfo.type} discount:`, discountInfo);
+//     // Fetch bundle configuration
+//     const { data: bundles } = await query.graph({
+//       entity: "bundle",
+//       fields: [
+//         "id",
+//         "title",
+//         "discount_type",
+//         "discount_2_items",
+//         "discount_3_items",
+//         "discount_2_items_amount",
+//         "discount_3_items_amount",
+//       ],
+//       filters: { id: bundleId, is_active: true },
+//     });
 
-    // Apply discount based on type
-    if (discountInfo.type === "percentage") {
-      if (typeof discountInfo.rate === "number") {
-        await applyPercentageDiscount(
-          bundleItems,
-          discountInfo.rate,
-          cartModuleService
-        );
-      } else {
-        console.warn(
-          "❌ Discount rate is undefined, skipping percentage discount application"
-        );
-        // ADDED: Reset to original prices when discount configuration is invalid
-        await resetBundleItemsToOriginalPrice(bundleItems, cartModuleService);
-      }
-    } else if (discountInfo.type === "fixed") {
-      if (typeof discountInfo.amount === "number") {
-        await applyFixedDiscount(
-          bundleItems,
-          discountInfo.amount,
-          cartModuleService
-        );
-      } else {
-        console.warn(
-          "❌ Discount amount is undefined, skipping fixed discount application"
-        );
-        // ADDED: Reset to original prices when discount configuration is invalid
-        await resetBundleItemsToOriginalPrice(bundleItems, cartModuleService);
-      }
-    }
+//     const bundle = bundles?.[0];
+//     if (!bundle) {
+//       console.log(
+//         `⚠️ Bundle ${bundleId} not found or inactive - resetting prices`
+//       );
+//       await resetToOriginalPrices(bundleItems, cartModuleService);
+//       return;
+//     }
 
-    console.log(`✅ Bundle ${bundleId} discounts recalculated successfully`);
-  } catch (error) {
-    console.error(`❌ Error processing bundle ${bundleId}:`, error);
-  }
-}
+//     // Calculate applicable discount
+//     const discount = calculateDiscount(totalItems, bundle);
 
-function calculateDiscountForItems(itemCount: number, bundle: any) {
-  // Check for fixed discount first
-  if (
-    bundle.discount_type === "fixed" ||
-    bundle.discount_2_items_amount ||
-    bundle.discount_3_items_amount
-  ) {
-    let discountAmount = 0;
+//     if (!discount.hasDiscount) {
+//       console.log(`❌ No discount for ${totalItems} items - resetting prices`);
+//       await resetToOriginalPrices(bundleItems, cartModuleService);
+//       return;
+//     }
 
-    if (itemCount === 2 && bundle.discount_2_items_amount) {
-      discountAmount = bundle.discount_2_items_amount;
-    } else if (itemCount >= 3 && bundle.discount_3_items_amount) {
-      discountAmount = bundle.discount_3_items_amount;
-    }
+//     // Apply discount
+//     console.log(`💰 Applying ${discount.type} discount`);
 
-    if (discountAmount > 0) {
-      return {
-        hasDiscount: true,
-        type: "fixed",
-        amount: discountAmount, // in cents
-        displayText: `RM${(discountAmount / 100).toFixed(2)} off`,
-      };
-    }
-  }
+//     if (discount.type === "percentage" && discount.rate) {
+//       await applyPercentageDiscount(
+//         bundleItems,
+//         discount.rate,
+//         cartModuleService
+//       );
+//     } else if (discount.type === "fixed" && discount.amount) {
+//       await applyFixedDiscount(bundleItems, discount.amount, cartModuleService);
+//     } else {
+//       console.warn("❌ Invalid discount configuration");
+//       await resetToOriginalPrices(bundleItems, cartModuleService);
+//     }
 
-  // Check for percentage discount
-  if (
-    bundle.discount_type === "percentage" ||
-    bundle.discount_2_items ||
-    bundle.discount_3_items
-  ) {
-    let discountPercentage = 0;
+//     console.log(`✅ Bundle ${bundleId} processed successfully`);
+//   } catch (error) {
+//     console.error(`❌ Error processing bundle ${bundleId}:`, error);
+//   }
+// }
 
-    if (itemCount === 2 && bundle.discount_2_items) {
-      discountPercentage = bundle.discount_2_items;
-    } else if (itemCount >= 3 && bundle.discount_3_items) {
-      discountPercentage = bundle.discount_3_items;
-    }
+// function calculateDiscount(itemCount: number, bundle: any): BundleDiscount {
+//   // Check fixed discount
+//   if (
+//     bundle.discount_type === "fixed" ||
+//     bundle.discount_2_items_amount ||
+//     bundle.discount_3_items_amount
+//   ) {
+//     let amount = 0;
+//     if (itemCount === 2 && bundle.discount_2_items_amount) {
+//       amount = bundle.discount_2_items_amount;
+//     } else if (itemCount >= 3 && bundle.discount_3_items_amount) {
+//       amount = bundle.discount_3_items_amount;
+//     }
 
-    if (discountPercentage > 0) {
-      return {
-        hasDiscount: true,
-        type: "percentage",
-        rate: discountPercentage / 100,
-        displayText: `${discountPercentage}% off`,
-      };
-    }
-  }
+//     if (amount > 0) {
+//       return { hasDiscount: true, type: "fixed", amount };
+//     }
+//   }
 
-  return { hasDiscount: false, type: "none" };
-}
+//   // Check percentage discount
+//   if (
+//     bundle.discount_type === "percentage" ||
+//     bundle.discount_2_items ||
+//     bundle.discount_3_items
+//   ) {
+//     let percentage = 0;
+//     if (itemCount === 2 && bundle.discount_2_items) {
+//       percentage = bundle.discount_2_items;
+//     } else if (itemCount >= 3 && bundle.discount_3_items) {
+//       percentage = bundle.discount_3_items;
+//     }
 
-async function resetBundleItemsToOriginalPrice(
-  bundleItems: any[],
-  cartModuleService: any
-) {
-  const updatePromises = bundleItems.map(async (item) => {
-    // Get original price from variant or stored metadata
-    let originalPrice = 0;
+//     if (percentage > 0) {
+//       return { hasDiscount: true, type: "percentage", rate: percentage / 100 };
+//     }
+//   }
 
-    if (item.metadata?.original_price_cents) {
-      originalPrice = item.metadata.original_price_cents;
-    } else if (item.variant?.prices?.length > 0) {
-      originalPrice = item.variant.prices[0].amount;
-    }
+//   return { hasDiscount: false, type: "none" };
+// }
 
-    if (originalPrice > 0) {
-      return cartModuleService.updateLineItems([
-        {
-          id: item.id,
-          unit_price: originalPrice,
-          metadata: {
-            ...item.metadata,
-            discount_applied: false,
-            discount_reset_at: new Date().toISOString(),
-          },
-        },
-      ]);
-    }
-  });
+// async function resetToOriginalPrices(
+//   bundleItems: CartItem[],
+//   cartModuleService: any
+// ) {
+//   const updates = bundleItems
+//     .map((item) => {
+//       const originalPrice =
+//         item.metadata?.original_price_cents ||
+//         item.variant?.prices?.[0]?.amount ||
+//         0;
 
-  await Promise.all(updatePromises.filter(Boolean));
-  console.log(`🔄 Reset ${bundleItems.length} items to original prices`);
-}
+//       if (originalPrice === 0) return null;
 
-async function applyPercentageDiscount(
-  bundleItems: any[],
-  discountRate: number,
-  cartModuleService: any
-) {
-  const updatePromises = bundleItems.map(async (item) => {
-    let originalPrice = 0;
+//       return {
+//         id: item.id,
+//         unit_price: originalPrice,
+//         metadata: {
+//           ...item.metadata,
+//           discount_applied: false,
+//           discount_reset_at: new Date().toISOString(),
+//         },
+//       };
+//     })
+//     .filter(Boolean);
 
-    // Get original price
-    if (item.variant?.prices?.length > 0) {
-      originalPrice = item.variant.prices[0].amount;
-    }
+//   await Promise.all(
+//     updates.map((update) => cartModuleService.updateLineItems([update]))
+//   );
 
-    if (originalPrice === 0) {
-      console.warn(`No price found for item ${item.id}`);
-      return null;
-    }
+//   console.log(`🔄 Reset ${updates.length} items to original prices`);
+// }
 
-    const discountedPrice = Math.round(originalPrice * (1 - discountRate));
+// async function applyPercentageDiscount(
+//   bundleItems: CartItem[],
+//   discountRate: number,
+//   cartModuleService: any
+// ) {
+//   const updates = bundleItems
+//     .map((item) => {
+//       const originalPrice = item.variant?.prices?.[0]?.amount || 0;
 
-    return cartModuleService.updateLineItems([
-      {
-        id: item.id,
-        unit_price: discountedPrice,
-        metadata: {
-          ...item.metadata,
-          original_price_cents: originalPrice,
-          discounted_price_cents: discountedPrice,
-          discount_applied: true,
-          discount_rate: discountRate,
-          discount_recalculated_at: new Date().toISOString(),
-        },
-      },
-    ]);
-  });
+//       if (originalPrice === 0) {
+//         console.warn(`No price for item ${item.id}`);
+//         return null;
+//       }
 
-  await Promise.all(updatePromises.filter(Boolean));
-  console.log(
-    `💰 Applied ${discountRate * 100}% discount to ${bundleItems.length} items`
-  );
-}
+//       const discountedPrice = Math.round(originalPrice * (1 - discountRate));
 
-async function applyFixedDiscount(
-  bundleItems: any[],
-  totalDiscountAmount: number,
-  cartModuleService: any
-) {
-  // Calculate bundle total
-  const bundleTotal = bundleItems.reduce((sum, item) => {
-    const originalPrice = item.variant?.prices?.[0]?.amount || 0;
-    return sum + originalPrice * item.quantity;
-  }, 0);
+//       return {
+//         id: item.id,
+//         unit_price: discountedPrice,
+//         metadata: {
+//           ...item.metadata,
+//           original_price_cents: originalPrice,
+//           discounted_price_cents: discountedPrice,
+//           discount_applied: true,
+//           discount_rate: discountRate,
+//           discount_applied_at: new Date().toISOString(),
+//         },
+//       };
+//     })
+//     .filter(Boolean);
 
-  if (bundleTotal === 0) {
-    console.warn("Bundle total is 0, cannot apply fixed discount");
-    return;
-  }
+//   await Promise.all(
+//     updates.map((update) => cartModuleService.updateLineItems([update]))
+//   );
 
-  // Distribute discount proportionally
-  let remainingDiscount = totalDiscountAmount;
-  const updatePromises = bundleItems.map(async (item, index) => {
-    const originalPrice = item.variant?.prices?.[0]?.amount || 0;
-    const itemTotal = originalPrice * item.quantity;
-    const itemProportion = itemTotal / bundleTotal;
+//   console.log(
+//     `💰 Applied ${(discountRate * 100).toFixed(0)}% discount to ${updates.length} items`
+//   );
+// }
 
-    // Calculate this item's share of the discount
-    let itemDiscountAmount: number;
-    if (index === bundleItems.length - 1) {
-      // Last item gets the remainder
-      itemDiscountAmount = remainingDiscount;
-    } else {
-      itemDiscountAmount = Math.round(totalDiscountAmount * itemProportion);
-      remainingDiscount -= itemDiscountAmount;
-    }
+// async function applyFixedDiscount(
+//   bundleItems: CartItem[],
+//   totalDiscountAmount: number,
+//   cartModuleService: any
+// ) {
+//   // Calculate bundle total
+//   const bundleTotal = bundleItems.reduce((sum, item) => {
+//     const price = item.variant?.prices?.[0]?.amount || 0;
+//     return sum + price * item.quantity;
+//   }, 0);
 
-    const discountPerUnit = Math.round(itemDiscountAmount / item.quantity);
-    const newUnitPrice = Math.max(0, originalPrice - discountPerUnit);
+//   if (bundleTotal === 0) {
+//     console.warn("Bundle total is 0, cannot apply discount");
+//     return;
+//   }
 
-    return cartModuleService.updateLineItems([
-      {
-        id: item.id,
-        unit_price: newUnitPrice,
-        metadata: {
-          ...item.metadata,
-          original_price_cents: originalPrice,
-          discounted_price_cents: newUnitPrice,
-          discount_applied: true,
-          fixed_discount_amount: itemDiscountAmount,
-          discount_recalculated_at: new Date().toISOString(),
-        },
-      },
-    ]);
-  });
+//   console.log(
+//     `💰 Distributing RM${(totalDiscountAmount / 100).toFixed(2)} discount`
+//   );
 
-  await Promise.all(updatePromises.filter(Boolean));
-  console.log(
-    `💰 Applied RM${(totalDiscountAmount / 100).toFixed(2)} fixed discount to ${bundleItems.length} items`
-  );
-}
+//   // Distribute discount proportionally
+//   let remainingDiscount = totalDiscountAmount;
+//   const updates: any[] = [];
+
+//   bundleItems.forEach((item, index) => {
+//     const originalPrice = item.variant?.prices?.[0]?.amount || 0;
+//     const itemTotal = originalPrice * item.quantity;
+//     const proportion = itemTotal / bundleTotal;
+
+//     // Calculate item's share (last item gets remainder)
+//     const itemDiscount =
+//       index === bundleItems.length - 1
+//         ? remainingDiscount
+//         : Math.round(totalDiscountAmount * proportion);
+
+//     remainingDiscount -= itemDiscount;
+
+//     const discountPerUnit = Math.round(itemDiscount / item.quantity);
+//     const newUnitPrice = Math.max(0, originalPrice - discountPerUnit);
+
+//     updates.push({
+//       id: item.id,
+//       unit_price: newUnitPrice,
+//       metadata: {
+//         ...item.metadata,
+//         original_price_cents: originalPrice,
+//         discounted_price_cents: newUnitPrice,
+//         discount_applied: true,
+//         fixed_discount_amount: itemDiscount,
+//         discount_applied_at: new Date().toISOString(),
+//       },
+//     });
+//   });
+
+//   await Promise.all(
+//     updates.map((update) => cartModuleService.updateLineItems([update]))
+//   );
+
+//   console.log(`✅ Applied fixed discount to ${updates.length} items`);
+// }
 
 export const config: SubscriberConfig = {
   event: "cart.updated",

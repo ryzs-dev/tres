@@ -1,4 +1,3 @@
-// src/workflows/steps/apply-bundle-discounts.ts
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
 import { container } from "@medusajs/framework";
 
@@ -20,7 +19,9 @@ export const applyBundleDiscountsStep = createStep(
     const cartModuleService = container.resolve("cart");
 
     try {
-      console.log(`🔄 Applying ${discount_rate * 100}% discount to bundle items in cart ${cart_id}`);
+      console.log(
+        `🔄 Applying ${discount_rate * 100}% discount to bundle items in cart ${cart_id}`
+      );
 
       // Get all bundle items in this cart
       const { data: cartItems } = await query.graph({
@@ -28,9 +29,9 @@ export const applyBundleDiscountsStep = createStep(
         fields: ["*", "metadata", "variant.*", "variant.prices.*"],
         filters: {
           cart_id: cart_id,
-          metadata: { 
+          metadata: {
             is_from_bundle: true,
-            bundle_id: bundle_id 
+            bundle_id: bundle_id,
           },
         },
       });
@@ -59,7 +60,9 @@ export const applyBundleDiscountsStep = createStep(
 
         const discountedPrice = Math.round(originalPrice * (1 - discount_rate));
 
-        console.log(`💰 Item ${item.id}: ${originalPrice} → ${discountedPrice} cents`);
+        console.log(
+          `💰 Item ${item.id}: ${originalPrice} → ${discountedPrice} cents`
+        );
 
         // Update the cart item
         try {
@@ -93,7 +96,9 @@ export const applyBundleDiscountsStep = createStep(
       const results = await Promise.all(updatePromises);
       const successfulUpdates = results.filter(Boolean);
 
-      console.log(`✅ Successfully applied discounts to ${successfulUpdates.length} items`);
+      console.log(
+        `✅ Successfully applied discounts to ${successfulUpdates.length} items`
+      );
 
       return new StepResponse(successfulUpdates);
     } catch (error) {

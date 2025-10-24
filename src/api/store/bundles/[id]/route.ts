@@ -8,8 +8,6 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     const { currency_code = "MYR", region_id } = req.query; // Default to MYR
 
     console.log("=== BUNDLE BY ID ===");
-    console.log("Bundle ID:", id);
-    console.log("Currency:", currency_code, "Region:", region_id);
 
     // First get bundle with items - UPDATED to include all discount fields
     const { data: bundles } = await query.graph({
@@ -120,22 +118,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       ),
     };
 
-    console.log(
-      "Found bundle:",
-      bundleWithProducts.title,
-      "with",
-      bundleWithProducts.items?.length,
-      "items"
-    );
-
-    // Log the discount configuration for debugging
-    console.log("Bundle discount config:", {
-      discount_type: bundleWithProducts.discount_type,
-      discount_2_items: bundleWithProducts.discount_2_items,
-      discount_3_items: bundleWithProducts.discount_3_items,
-      discount_2_items_amount: bundleWithProducts.discount_2_items_amount,
-      discount_3_items_amount: bundleWithProducts.discount_3_items_amount,
-    });
+    console.log("Bundle Discount Type: ", bundleWithProducts.discount_type);
 
     res.json({
       bundle: bundleWithProducts,

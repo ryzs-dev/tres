@@ -16,10 +16,6 @@ export async function POST(
     const cartId = req.params.id;
     const { bundle_id } = req.validatedBody || {};
 
-    console.log(`🔄 Recalculating bundle discounts for cart ${cartId}`, {
-      specific_bundle: bundle_id || "all bundles",
-    });
-
     const { result } = await recalculateBundleDiscountsWorkflow(req.scope).run({
       input: {
         cart_id: cartId,

@@ -7,7 +7,10 @@ import {
 import { createFindParams } from "@medusajs/medusa/api/utils/validators";
 import { z } from "zod";
 import { PostFlexibleBundleSchema } from "./admin/bundled-products/route";
-import { PostFlexibleBundleToCartSchema } from "./store/carts/[id]/flexible-bundle-items/route";
+import {
+  PatchFlexibleBundleInCartSchema,
+  PostFlexibleBundleToCartSchema,
+} from "./store/carts/[id]/flexible-bundle-items/route";
 
 // FIXED: Update schema for editing bundles with proper null handling
 export const UpdateFlexibleBundleSchema = z.object({
@@ -210,6 +213,11 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/flexible-bundle-items",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostFlexibleBundleToCartSchema)],
+    },
+    {
+      matcher: "/store/carts/:id/flexible-bundle-items",
+      methods: ["PATCH"],
+      middlewares: [validateAndTransformBody(PatchFlexibleBundleInCartSchema)],
     },
     {
       matcher: "/store/carts/:id/flexible-bundle-items/:bundle_id",
