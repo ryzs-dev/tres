@@ -122,7 +122,7 @@ class RazorpayProviderService extends AbstractPaymentProvider<Options> {
       console.log("Input", input.data);
 
       // Convert amount to smallest currency unit (cents for MYR)
-      const amountInSmallestUnit = Math.round(amount) * 100;
+      const amountInSmallestUnit = amount * 100;
       const receiptId = metadata?.cart_id || `tres_receipt_${Date.now()}`;
       const currencyCode = currency.toUpperCase();
 
