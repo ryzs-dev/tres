@@ -281,13 +281,11 @@ type NewUserEmailProps = {
     first_name?: string;
     email: string;
   };
-  promoCodes: string[]; // Remove default generation, require codes to be passed
   imageUrl?: string;
 };
 
 export function NewUserEmail({
   user,
-  promoCodes, // No default value - must be provided
   imageUrl = "https://storage.tres.my/first_buyer_2.JPG",
 }: NewUserEmailProps) {
   return (
@@ -324,27 +322,22 @@ export function NewUserEmail({
 
             <Text style={text} className="mobile-text">
               As a first-time buyer, enjoy <strong style={bold}>10% OFF</strong>{" "}
-              your first purchase with us. This exclusive offer is valid for 3
-              months.
+              your first purchase with us.
             </Text>
 
             {/* Promo Codes */}
             <Section style={promoContainer}>
-              <Text style={promoLabel}>Your exclusive code:</Text>
-              {promoCodes.map((code, idx) => (
+              <Text style={promoLabel}>Your welcome code:</Text>
                 <Text
-                  key={idx}
                   style={promoCodeText}
                   className="mobile-promo-code"
                 >
-                  {code}
+                  WELCOME10
                 </Text>
-              ))}
             </Section>
 
-            <Text style={expiryText} className="mobile-text">
-              ⏰ <strong>Valid for 3 months</strong> from sign-up date. Use it
-              before it expires!
+            <Text style={text} className="mobile-text">
+                This code will be automatically applied to your first purchase.
             </Text>
 
             <Text style={text} className="mobile-text">
@@ -550,6 +543,5 @@ const button = {
 export default () => (
   <NewUserEmail
     user={{ first_name: "Joanna", email: "traumfrau283@gmail.com" }}
-    promoCodes={["TRES123ABC"]} // Example code for testing
   />
 );
