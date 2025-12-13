@@ -1,5 +1,6 @@
 // src/api/middlewares.ts - FIXED SCHEMA
 import {
+  authenticate,
   defineMiddlewares,
   validateAndTransformBody,
   validateAndTransformQuery,
@@ -11,6 +12,10 @@ import {
   PatchFlexibleBundleInCartSchema,
   PostFlexibleBundleToCartSchema,
 } from "./store/carts/[id]/flexible-bundle-items/route";
+import { PostStoreReviewSchema } from "./store/reviews/route";
+import { GetAdminReviewsSchema } from "./admin/reviews/route";
+import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route";
+import { GetStoreReviewsSchema } from "./store/products/[id]/reviews/route";
 
 // FIXED: Update schema for editing bundles with proper null handling
 export const UpdateFlexibleBundleSchema = z.object({
@@ -207,6 +212,64 @@ export default defineMiddlewares({
         }),
       ],
     },
+    {
+      method: ["POST"], 
+      matcher: "/store/reviews",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"]),
+        validateAndTransformBody(PostStoreReviewSchema),
+      ],
+    },
+    {
+      matcher: "/admin/reviews",
+      method: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetAdminReviewsSchema, {
+          isList: true,
+          defaults: [
+            "id",
+            "title",
+            "content",
+            "rating",
+            "product_id",
+            "customer_id",
+            "status",
+            "created_at",
+            "updated_at",
+            "product.*",
+          ],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/reviews/status",
+      method: ["POST"],
+      middlewares: [
+        validateAndTransformBody(PostAdminUpdateReviewsStatusSchema),
+      ],
+    },
+    {
+      matcher: "/store/products/:id/reviews",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetStoreReviewsSchema, {
+          isList: true,
+          defaults: [
+            "id", 
+            "rating", 
+            "title", 
+            "first_name", 
+            "last_name", 
+            "content", 
+            "created_at",
+          ],
+        }),
+      ],
+    },
+
+
+
+
 
     // Cart bundle items routes
     {

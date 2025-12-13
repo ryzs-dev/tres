@@ -108,7 +108,6 @@ module.exports = defineConfig({
               additional_client_config: {
                 forcePathStyle: true,
               },
-              // other options...
             },
           },
         ],
@@ -119,6 +118,9 @@ module.exports = defineConfig({
     },
     {
       resolve: "./src/modules/promo-code",
+    },
+    {
+      resolve: "./src/modules/product-review",
     },
   ],
 });
