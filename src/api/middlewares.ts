@@ -213,7 +213,7 @@ export default defineMiddlewares({
       ],
     },
     {
-      method: ["POST"], 
+      method: ["POST"],
       matcher: "/store/reviews",
       middlewares: [
         authenticate("customer", ["session", "bearer"]),
@@ -255,21 +255,17 @@ export default defineMiddlewares({
         validateAndTransformQuery(GetStoreReviewsSchema, {
           isList: true,
           defaults: [
-            "id", 
-            "rating", 
-            "title", 
-            "first_name", 
-            "last_name", 
-            "content", 
+            "id",
+            "rating",
+            "title",
+            "first_name",
+            "last_name",
+            "content",
             "created_at",
           ],
         }),
       ],
     },
-
-
-
-
 
     // Cart bundle items routes
     {
@@ -312,6 +308,19 @@ export default defineMiddlewares({
           }
           next();
         },
+      ],
+    },
+    {
+      matcher: "/product-feed",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(
+          z.object({
+            currency_code: z.string(),
+            country_code: z.string(),
+          }),
+          {}
+        ),
       ],
     },
   ],
