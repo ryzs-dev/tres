@@ -46,7 +46,7 @@
   "devDependencies": {
     "@medusajs/test-utils": "2.12.5",
     "@mikro-orm/cli": "6.4.3",
-    "@react-email/preview-server": "^4.2.8",
+    "@react-email/preview-server": "^5.2.3",
     "@swc/core": "1.5.7",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.13",
@@ -57,7 +57,7 @@
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-email": "^4.2.8",
+    "react-email": "^5.2.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2",
     "vite": "^5.2.11",
