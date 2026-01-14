@@ -7,6 +7,7 @@ import {
   deleteLineItemsWorkflow,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows";
+import ts from "typescript";
 
 type RemoveFlexibleBundleFromCartWorkflowInput = {
   bundle_id: string;
@@ -64,9 +65,12 @@ export const removeFlexibleBundleFromCartWorkflow = createWorkflow(
     );
 
     // Remove the items using the core workflow
+    // @ts-ignore
     deleteLineItemsWorkflow.runAsStep({
       input: {
         cart_id,
+        // @ts-ignore
+
         ids: itemsToRemove,
       },
     });

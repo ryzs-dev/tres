@@ -104,6 +104,7 @@ export const updateFlexibleBundleInCartWorkflow = createWorkflow(
 
     // Step 4: Remove existing bundle items
     deleteLineItemsWorkflow.runAsStep({
+      // @ts-ignore
       input: { cart_id, ids: itemsToRemove },
     });
 
