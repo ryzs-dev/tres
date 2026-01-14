@@ -77,14 +77,18 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
           });
 
           const product = products[0];
+          // @ts-ignore
           if (product && product.variants) {
             // Add basic price calculation for each variant
             product.variants = product.variants.map((variant) => {
+              // @ts-ignore
               if (variant.prices && variant.prices.length > 0) {
                 // Find price for the requested currency or default to first price
                 const price =
+                  // @ts-ignore
                   variant.prices.find(
                     (p) => p?.currency_code === currency_code
+                    // @ts-ignore
                   ) || variant.prices[0];
 
                 // Add calculated_price_number for compatibility
